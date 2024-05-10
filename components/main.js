@@ -1,20 +1,75 @@
 import React, {useState,useEffect} from 'react';
 import {StyleSheet,View, FlatList,SafeAreaView,Text,TouchableOpacity} from 'react-native';
-import { FontAwesome} from '@expo/vector-icons';
+import {FontAwesome} from '@expo/vector-icons';
 import moment from 'moment'; //формат времени для ленивых
 import 'moment/locale/ru';// ru контент
-import Active from './Active';
+
+function ActiveWork({data, navigation}) {
+  const LoadScene = (item)=>{
+    navigation.navigate('О Заявке',{itemData: item});
+  }
+  const formatDateTime = (dateTime) => {
+    return moment(dateTime).format('lll');
+  };
+  const filterDataByActive = () => {
+    return data.filter(item => item.Status === 0);//фильтруем только активные заявки на инженере
+  }; 
+  return (
+    <SafeAreaView style={styles.main}>
+    <FlatList data={filterDataByActive()} renderItem={({item}) =>(
+      <TouchableOpacity style={styles.text} onPress={() => LoadScene(item)} >
+          <Text style={{flexDirection:"row", marginRight: 10}}> 
+          <Text >№ Заявки: {item.Number}  </Text>
+          <Text style={styles.activeBox}>{item.Service}</Text>
+          </Text>
+          <Text >Дата создания: {formatDateTime(item.Date)}</Text>
+      </TouchableOpacity>
+    )}>
+    </FlatList>
+  </SafeAreaView>
+
+  );
+}
+function ArchiveWork({data, navigation}) {
+  const LoadScene = (item)=>{
+    navigation.navigate('О Заявке',{itemData: item});
+  }
+  const formatDateTime = (dateTime) => {
+    return moment(dateTime).format('lll');
+  };
+  const filterDataByArchive = () => {
+    return data.filter(item => item.Status === 1);//фильтруем только архивные заявки на инженере
+  };  
+  return (
+    <SafeAreaView style={styles.main}>
+    <FlatList data={filterDataByArchive()} renderItem={({item}) =>(
+      <TouchableOpacity style={styles.text} onPress={() => LoadScene(item)} >
+          <Text style={{flexDirection:"row", }}> 
+          <Text >№ Заявки: {item.Number}  </Text>
+          <Text style={styles.activeBox} >{item.Service}</Text>
+          </Text>
+          <Text >Дата создания: {formatDateTime(item.Date)}</Text>
+      </TouchableOpacity>
+    )}>
+    </FlatList>
+  </SafeAreaView>
+
+  );
+}
+
+
+
 
 export default function Main({navigation}) {
   const [data, setData] = useState([]);
-
+  const [currentScreen, setCurrentScreen] = useState('ActiveWork');
   useEffect(() => {
     fetchData(); // Вызов функции для получения данных при монтировании компонента
   }, []);
 
   const fetchData = async () => {
     try {
-      const response = await fetch('http://192.168.0.17:3000/data'); // Запрос к вашему API
+      const response = await fetch('http://178.253.42.83:3000/data'); // Запрос к сервису
       const jsonData = await response.json(); // Преобразование ответа в JSON
       setData(jsonData); // Установка полученных данных в состояние компонента
     } catch (error) {
@@ -22,31 +77,33 @@ export default function Main({navigation}) {
     }
   };
   
-  const LoadScene = (item)=>{
-    navigation.navigate('О Заявке',{itemData: item});
-  }
+
   const LoadSceneMaps = ()=>{
     navigation.navigate('Карта');
   }
 
-  const formatDateTime = (dateTime) => {
-    return moment(dateTime).format('lll');
-  };
-  
+
+ 
+
 
   return (
       <View style={styles.container}>
-        <Active/>
-        <SafeAreaView style={styles.main}>
-          <FlatList data={data} renderItem={({item}) =>(
-            <TouchableOpacity style={styles.text} onPress={() => LoadScene(item)} >
-                <Text >№ Заявки: {item.Number}</Text>
-                <Text >Дата создания: {formatDateTime(item.Date)}</Text>
-                
-            </TouchableOpacity>
-          )}>
-          </FlatList>
-        </SafeAreaView>
+        <View style={styles.mainButton}>
+          <View style={styles.navBox}> 
+              <View style = {styles.box}>
+                  <TouchableOpacity onPress={() => setCurrentScreen('ActiveWork')}>
+                      <Text style={[styles.textButton, currentScreen === 'ActiveWork' ? styles.activeBox : null]}>Активные</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => setCurrentScreen('ArchiveWork')}>
+                      <Text style={[styles.textButton, currentScreen === 'ArchiveWork' ? styles.activeBox: null]}>Архивные</Text>
+                  </TouchableOpacity>
+              </View>
+          </View>
+    </View>
+
+        {currentScreen === 'ActiveWork' && <ActiveWork data={data} navigation={navigation}/>}
+        {currentScreen === 'ArchiveWork' && <ArchiveWork data={data} navigation={navigation}/>}
+
         <TouchableOpacity
           style={styles.mapIcon}
           onPress={() => LoadSceneMaps()}
@@ -94,6 +151,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center', // Выравнивание текста по центру по вертикали
     alignItems: 'center', // Выравнивание текста по центру по горизонтали
   },
-  mapIcon_Set:{
-  }
+  activeBox:{//активация кнопок(подсветка)
+    backgroundColor: '#4287f5',
+    color: 'white'
+  },
+  textButton:{
+    color: 'black',
+    padding:5,
+    textAlign: 'center',
+    borderRadius: 25,
+    margin: 5
+},
+navBox: {
+  flexDirection:'row',
+  alignItems: 'center',
+  justifyContent: 'left',
+  
+},
+box:{
+  justifyContent: 'center',
+  flexDirection:'row',
+},
+mainButton:{
+  backgroundColor: '#ffff',  
+},
 });

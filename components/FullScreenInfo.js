@@ -1,27 +1,158 @@
 import React, {useState} from 'react';
-import { StyleSheet,Text,ScrollView,View,TouchableOpacity} from 'react-native';
+import { StyleSheet,Text,ScrollView,View,TouchableOpacity, Image, Button, Alert} from 'react-native';
 import { useRoute } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
+import axios from 'axios';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 function AttributesComponent() {
   const route = useRoute();
   const { itemData } = route.params;
   return (
     <ScrollView style={styles.main} >
-        <Text style={styles.text}>{JSON.stringify(itemData.Description).replace(/\\n/g, '\n')}</Text>
+        <Text style={styles.textContainer}>{JSON.stringify(itemData.Description).replace(/\\n/g, '\n')}</Text>
     </ScrollView>
   );
 }
 
 function JobsComponent() {
-  return (
-      <ScrollView style={styles.main} >
-          <Text style={styles.BoldText} >Выбор банка</Text>
-          <TouchableOpacity><Text style={styles.text}>ГазпромБанк</Text></TouchableOpacity>
-          <TouchableOpacity><Text style={styles.text}>Альфа-Банк</Text></TouchableOpacity>
-          <TouchableOpacity><Text style={styles.text}>ВТБ</Text></TouchableOpacity>
-          <TouchableOpacity><Text style={styles.text}>Тинькофф, МТС-БАНК</Text></TouchableOpacity>
-      </ScrollView>
+  const [images, setImages] = useState({
+    terminal: [],
+    serailnumber:[],
+    payment: [],
+    paymentkey:[],
+    cancel: [],
+    finalCheck: []
+  });
 
+
+  const pickImage = async (blockName) => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      aspect: [4, 3],
+      quality: 1,
+    });
+    console.log(result);
+    if (!result.canceled) {
+      setImages(prevImages => ({
+        ...prevImages,
+        [blockName]: [...prevImages[blockName], result.assets[0].uri]
+      }));
+    }
+  };
+
+  const uploadAllImages = async () => {
+    try {
+      const formData = new FormData();
+  
+      // Перебираем все блоки изображений
+      for (const blockName in images) {
+        // Перебираем все изображения в текущем блоке
+        for (const [index, imageUri] of images[blockName].entries()) {
+          // Сжимаем изображение
+          const compressedImageUri = await compressImage(imageUri);
+          if (compressedImageUri) {
+            // Добавляем сжатое изображение в FormData
+            formData.append(`${blockName}[${index}]`, {
+              uri: compressedImageUri,
+              name: `${blockName}_${index}.jpg`,
+              type: 'image/jpg',
+            });
+          }
+        }
+      }
+  
+      // Отправляем FormData на сервер
+      const response = await axios.post('http://178.253.42.83:3000/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+  
+      // Обработка успешного ответа от сервера
+      Alert.alert('Success', 'All images uploaded successfully');
+    } catch (error) {
+      // Обработка ошибок загрузки
+      Alert.alert('Error', 'Failed to upload images');
+    }
+  };
+// Функция для сжатия изображения
+const compressImage = async (uri) => {
+  try {
+    const manipulatedImage = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: 800 } }],
+      { compress: 0.5, format: 'jpeg' } // параметры сжатия и формата
+    );
+    console.log('Image compressed successfully');
+    return manipulatedImage.uri; // возвращает uri сжатого изображения
+  } catch (error) {
+    console.error('Failed to compress image', error);
+    return null;
+  }
+};
+
+  return (
+    <ScrollView style={styles.main}>
+      <Text style={styles.BoldText}>Отчет</Text>
+      <TouchableOpacity onPress={() => pickImage('terminal')}>
+        <View style={styles.textContainer}>
+          <Text style={styles.text}>Терминал (внешний вид)</Text>
+          {images.terminal.map((uri, index) => (
+            <Image key={index} source={{ uri }} style={{ width: 50, height: 50 }} />
+          ))}
+        </View>
+      </TouchableOpacity>
+      
+      <TouchableOpacity onPress={() => pickImage('serailnumber')}>
+        <View style={styles.textContainer}>
+          <Text style={styles.text}>Терминал (серийный номер)</Text>
+          {images.serailnumber.map((uri, index) => (
+            <Image key={index} source={{ uri }} style={{ width: 50, height: 50 }} />
+          ))}
+        </View>
+      </TouchableOpacity>
+      
+      <TouchableOpacity onPress={() => pickImage('payment')}>
+        <View style={styles.textContainer}>
+          <Text style={styles.text}>Оплата</Text>
+          {images.payment.map((uri, index) => (
+            <Image key={index} source={{ uri }} style={{ width: 50, height: 50 }} />
+          ))}
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => pickImage('paymentkey')}>
+        <View style={styles.textContainer}>
+          <Text style={styles.text}>Оплата 5001</Text>
+          {images.paymentkey.map((uri, index) => (
+            <Image key={index} source={{ uri }} style={{ width: 50, height: 50 }} />
+          ))}
+        </View>
+      </TouchableOpacity>
+      
+
+      <TouchableOpacity onPress={() => pickImage('cancel')}>
+        <View style={styles.textContainer}>
+          <Text style={styles.text}>Отмена</Text>
+          {images.cancel.map((uri, index) => (
+            <Image key={index} source={{ uri }} style={{ width: 50, height: 50 }} />
+          ))}
+        </View>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => pickImage('finalCheck')}>
+        <View style={styles.textContainer}>
+          <Text style={styles.text}>Финальная сверка итогов</Text>
+          {images.finalCheck.map((uri, index) => (
+            <Image key={index} source={{ uri }} style={{ width: 50, height: 50 }} />
+          ))}
+        </View>
+      </TouchableOpacity>
+      
+      <Button title="Upload All Images" onPress={() => uploadAllImages(images)} />
+    </ScrollView>
   );
 }
 
@@ -30,6 +161,9 @@ function JobsComponent() {
 
 export default function FullScrenInfo() {
   const [currentScreen, setCurrentScreen] = useState('attributes');
+  
+
+
   
   return (
     <View style={styles.container}>
@@ -60,7 +194,7 @@ const styles = StyleSheet.create({
     backgroundColor:'#e3e3e3',
     flex: 1
   },
-  text:{
+  textContainer:{
     padding:20,
     borderRadius:5,
     backgroundColor: '#FFFF',
@@ -79,10 +213,9 @@ const styles = StyleSheet.create({
   activeBox:{//активация кнопок(подсветка)
     backgroundColor: '#4287f5',
     color: 'white'
-},
+  },
   mainButton:{
-      backgroundColor: '#ffff',
-      
+      backgroundColor: '#ffff',  
   },
   textButton:{
       color: 'black',
