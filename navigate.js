@@ -1,47 +1,79 @@
-import React from 'react';
+import React, {useState,useEffect} from 'react';
 import Main from './components/main';
-import FullScrenInfo from './components/FullScreenInfo';
-import Maps from './components/maps'
-import {View} from 'react-native';
-import { AntDesign, Entypo } from '@expo/vector-icons';
-
+import FullScreenInfo from './components/FullScreenInfo';
+import LoginScreen from './components/loginscreen';
+import Maps from './components/maps';
+import Settings from './components/Settings';
+import Equipments from './components/Equipments';
+import { AntDesign } from '@expo/vector-icons';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 
 
-const Stack = createStackNavigator();
+const Stack  = createStackNavigator();
+const Tab = createBottomTabNavigator();
 
-export default function Navigate(){
-    return <NavigationContainer>
-        <Stack.Navigator>
-            <Stack.Screen
-                name = 'Заявки'
-                component={Main}
-                options = {{title: 'Заявки',
-                headerRight: () => (
-                    <View style={{ flexDirection: 'row', marginRight: 20 }}>
-                        <AntDesign style={{marginRight:20}} name="filter" size={27} color="black" />
-                        <AntDesign  name="search1" size={27} color="black" />
-                    </View>
-                  )
-            }}
-            />
-            <Stack.Screen
-                name = 'О Заявке' 
-                component={FullScrenInfo}
-                options = {({route}) =>({
-                    title: 'Заявка № ' + route.params?.itemData.Number,
-                })}
-            />
-            <Stack.Screen
-                name = 'Карта' 
-                component={Maps}
-                options = {{
-                    title: 'Карта'
-                    }}
+function TabNavigator() {
+  return (
+    <Tab.Navigator>
+      <Tab.Screen name="Заявки"
+       component={Main}
+       options={{
+        tabBarIcon: ({ color, size }) => (
+          <AntDesign name="profile" size={size} color={color} />
+        ),
+      }} 
+        />
+      <Tab.Screen name="Оборудование"
+       component={Equipments}
+       options={{
+        tabBarIcon: ({ color, size }) => (
+          <AntDesign name="tool" size={size} color={color} />
+        ),
+      }} />
+      <Tab.Screen name="Настройки"
+       component={Settings}
+       options={{
+        tabBarIcon: ({ color, size }) => (
+          <AntDesign name="setting" size={size} color={color} />
+        ),
+      }} />
+    </Tab.Navigator>
+  );
+}
 
-            />
-        </Stack.Navigator>
-    </NavigationContainer>;
+
+
+
+
+export default function navigate() {
+
+  return (
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Login">
+      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+        <Stack.Screen
+          name="Main"
+          component={TabNavigator}
+          options={{ headerShown: false }} // скрыть заголовок
+        />
+        <Stack.Screen
+          name="О Заявке"
+          component={FullScreenInfo}
+          options={({ route }) => ({
+            title: 'Заявка № ' + route.params?.itemData.Number,
+          })}
+        />
+        <Stack.Screen
+          name="Карта"
+          component={Maps}
+          options={{
+            title: 'Карта'
+          }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
 }

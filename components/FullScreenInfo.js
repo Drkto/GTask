@@ -64,7 +64,7 @@ function JobsComponent() {
       }
   
       // Отправляем FormData на сервер
-      const response = await axios.post('http://178.253.42.83:3000/upload', formData, {
+      const response = await axios.post('http://192.168.0.9:3000/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -159,7 +159,7 @@ const compressImage = async (uri) => {
 
 
 
-export default function FullScrenInfo() {
+export default function FullScreenInfo() {
   const [currentScreen, setCurrentScreen] = useState('attributes');
   
 
@@ -179,7 +179,7 @@ export default function FullScrenInfo() {
             </View>
         </View>
     </View>
-      {currentScreen === 'attributes' && <AttributesComponent />}
+      {currentScreen === 'attributes' && <AttributesComponent/>}
       {currentScreen === 'jobs' && <JobsComponent/>}
     </View>
   );

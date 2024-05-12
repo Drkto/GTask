@@ -1,8 +1,9 @@
 import React, {useState,useEffect} from 'react';
 import {StyleSheet,View, FlatList,SafeAreaView,Text,TouchableOpacity} from 'react-native';
-import {FontAwesome} from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import moment from 'moment'; //формат времени для ленивых
 import 'moment/locale/ru';// ru контент
+
 
 function ActiveWork({data, navigation}) {
   const LoadScene = (item)=>{
@@ -69,7 +70,7 @@ export default function Main({navigation}) {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('http://178.253.42.83:3000/data'); // Запрос к сервису
+      const response = await fetch('http://192.168.0.9:3000/data'); // Запрос к сервису
       const jsonData = await response.json(); // Преобразование ответа в JSON
       setData(jsonData); // Установка полученных данных в состояние компонента
     } catch (error) {
@@ -108,12 +109,14 @@ export default function Main({navigation}) {
           style={styles.mapIcon}
           onPress={() => LoadSceneMaps()}
         >
-          <Text style={styles.mapIcon_Set}><FontAwesome name="map-marker" size={40} color="white"/></Text>
+          <Text style={styles.mapIcon_Set}><FontAwesome name="map-marker" size={24} color="black" /></Text>
           
         </TouchableOpacity>
+        
       </View>
   );
 }
+
 
 
 const styles = StyleSheet.create({
@@ -142,7 +145,7 @@ const styles = StyleSheet.create({
   },
   mapIcon: {
     position: 'absolute',
-    bottom: 15, // Расстояние от нижней границы
+    bottom: '1%', // Расстояние от нижней границы
     right: 15, // Расстояние от правой границы
     width: 60, // Ширина круглого контейнера
     height: 60, // Высота круглого контейнера
