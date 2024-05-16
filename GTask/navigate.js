@@ -1,16 +1,15 @@
-import React, {useState,useEffect} from 'react';
+import React from 'react';
 import Main from './components/main';
 import FullScreenInfo from './components/FullScreenInfo';
 import LoginScreen from './components/loginscreen';
-import Maps from './components/maps';
 import Settings from './components/Settings';
 import Equipments from './components/Equipments';
 import { AntDesign } from '@expo/vector-icons';
 import { createStackNavigator } from '@react-navigation/stack';
-import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-
-
+import { NavigationContainer } from '@react-navigation/native';
+import { StatusBar } from 'react-native';
+import { ApiUrlProvider } from './components/contexts/ApiUrlContext';
 
 const Stack  = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -51,29 +50,26 @@ function TabNavigator() {
 export default function navigate() {
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-      <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
-        <Stack.Screen
-          name="Main"
-          component={TabNavigator}
-          options={{ headerShown: false }} // скрыть заголовок
-        />
-        <Stack.Screen
-          name="О Заявке"
-          component={FullScreenInfo}
-          options={({ route }) => ({
-            title: 'Заявка № ' + route.params?.itemData.Number,
-          })}
-        />
-        <Stack.Screen
-          name="Карта"
-          component={Maps}
-          options={{
-            title: 'Карта'
-          }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <ApiUrlProvider>
+      <NavigationContainer>
+        <StatusBar backgroundColor="white" barStyle="dark-content" />
+        <Stack.Navigator initialRouteName="Login">
+        <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="Main"
+            component={TabNavigator}
+            options={{ headerShown: false }} // скрыть заголовок
+          />
+          <Stack.Screen
+            name="О Заявке"
+            component={FullScreenInfo}
+            options={({ route }) => ({
+              title: 'Заявка № ' + route.params?.itemData.Number,
+            })}
+          />
+        </Stack.Navigator>
+        
+        </NavigationContainer>
+      </ApiUrlProvider>
   );
 }

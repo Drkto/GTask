@@ -1,9 +1,10 @@
-import React, {useState} from 'react';
+import React, {useState, useContext} from 'react';
 import { StyleSheet,Text,ScrollView,View,TouchableOpacity, Image, Button, Alert} from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { ApiUrlContext } from './contexts/ApiUrlContext';
 
 function AttributesComponent() {
   const route = useRoute();
@@ -16,6 +17,7 @@ function AttributesComponent() {
 }
 
 function JobsComponent() {
+  const { apiUrl } = useContext(ApiUrlContext);
   const [images, setImages] = useState({
     terminal: [],
     serailnumber:[],
@@ -64,7 +66,7 @@ function JobsComponent() {
       }
   
       // Отправляем FormData на сервер
-      const response = await axios.post('http://192.168.0.9:3000/upload', formData, {
+      const response = await axios.post(`${apiUrl}/upload`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },

@@ -1,8 +1,8 @@
-import React, {useState,useEffect} from 'react';
-import {StyleSheet,View, FlatList,SafeAreaView,Text,TouchableOpacity} from 'react-native';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import React, {useState,useEffect, useContext} from 'react';
+import {StyleSheet,View, FlatList,SafeAreaView,Text,TouchableOpacity,StatusBar} from 'react-native';
 import moment from 'moment'; //формат времени для ленивых
 import 'moment/locale/ru';// ru контент
+import { ApiUrlContext } from './contexts/ApiUrlContext';
 
 
 function ActiveWork({data, navigation}) {
@@ -62,6 +62,7 @@ function ArchiveWork({data, navigation}) {
 
 
 export default function Main({navigation}) {
+  const { apiUrl } = useContext(ApiUrlContext);
   const [data, setData] = useState([]);
   const [currentScreen, setCurrentScreen] = useState('ActiveWork');
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function Main({navigation}) {
 
   const fetchData = async () => {
     try {
-      const response = await fetch('http://192.168.0.9:3000/data'); // Запрос к сервису
+      const response = await fetch(`${apiUrl}/data`); // Запрос к сервису
       const jsonData = await response.json(); // Преобразование ответа в JSON
       setData(jsonData); // Установка полученных данных в состояние компонента
     } catch (error) {
@@ -78,17 +79,13 @@ export default function Main({navigation}) {
     }
   };
   
-
-  const LoadSceneMaps = ()=>{
-    navigation.navigate('Карта');
-  }
-
-
  
 
 
   return (
+    
       <View style={styles.container}>
+        
         <View style={styles.mainButton}>
           <View style={styles.navBox}> 
               <View style = {styles.box}>
@@ -104,15 +101,7 @@ export default function Main({navigation}) {
 
         {currentScreen === 'ActiveWork' && <ActiveWork data={data} navigation={navigation}/>}
         {currentScreen === 'ArchiveWork' && <ArchiveWork data={data} navigation={navigation}/>}
-
-        <TouchableOpacity
-          style={styles.mapIcon}
-          onPress={() => LoadSceneMaps()}
-        >
-          <Text style={styles.mapIcon_Set}><FontAwesome name="map-marker" size={24} color="black" /></Text>
-          
-        </TouchableOpacity>
-        
+        <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
       </View>
   );
 }

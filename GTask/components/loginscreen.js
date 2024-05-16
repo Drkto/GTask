@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, TextInput, Button, StyleSheet, Image, Text } from 'react-native';
+import React, { useState, useEffect, useContext } from 'react';
+import { View, TextInput, Button, StyleSheet, Image, Text, Alert, StatusBar } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import { ApiUrlContext } from './contexts/ApiUrlContext';
 
 const LoginScreen = ({ navigation }) => {
+  const { apiUrl, toggleApiUrl } = useContext(ApiUrlContext);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
@@ -38,12 +40,17 @@ const LoginScreen = ({ navigation }) => {
       });
     } catch (error) {
       console.error('Error logging in:', error);
+      let errorMessage = 'Не удалось подключиться к серверу. Проверьте ваше интернет-соединение и повторите попытку.';
+      if (error.response && error.response.data && error.response.data.error) {
+        errorMessage += `\nКод ошибки: ${error.response.data.error}`;
+      }
+      Alert.alert('Ошибка', errorMessage);
     }
   };
 
   const loginUser = async (phoneNumber, password) => {
     try {
-      const response = await axios.post('http://192.168.0.9:3000/login', {
+      const response = await axios.post(`${apiUrl}/login`, {
         phoneNumber: phoneNumber,
         password: password,
       }, {
@@ -60,6 +67,8 @@ const LoginScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
+      <Button title="Сменить сервер" onPress={toggleApiUrl} />
+      <Text>URL - Server: Local192-VPS:178: {apiUrl}</Text>
       <Image
         source={require('../assets/logo.png')}
         style={styles.logo}
@@ -86,6 +95,8 @@ const LoginScreen = ({ navigation }) => {
       {loggedIn && (
         <Text>Вы уже авторизованы.</Text>
       )}
+      <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
+      
     </View>
   );
 };
