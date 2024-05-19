@@ -3,9 +3,11 @@ import { View, TextInput, Button, StyleSheet, Image, Text, Alert, StatusBar } fr
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 import { ApiUrlContext } from './contexts/ApiUrlContext';
+import { UserContext } from './contexts/UserContext';
 
 const LoginScreen = ({ navigation }) => {
   const { apiUrl, toggleApiUrl } = useContext(ApiUrlContext);
+  const { setUser } = useContext(UserContext);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [loggedIn, setLoggedIn] = useState(false);
@@ -17,7 +19,9 @@ const LoginScreen = ({ navigation }) => {
   const checkLoggedIn = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
-      if (token) {
+      const user = await AsyncStorage.getItem('user');
+      if (token && user) {
+        setUser(JSON.parse(user));
         setLoggedIn(true);
         navigation.reset({
           index: 0,
@@ -31,13 +35,19 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     try {
-      const token = await loginUser(phoneNumber, password);
-      await AsyncStorage.setItem('token', token);
-      setLoggedIn(true);
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
+      const response = await loginUser(phoneNumber, password);
+      if (response.token && response.user) {
+        await AsyncStorage.setItem('token', response.token);
+        await AsyncStorage.setItem('user', JSON.stringify(response.user));
+        setUser(response.user); // Устанавливаем пользователя в контексте
+        setLoggedIn(true);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Main' }],
+        });
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (error) {
       console.error('Error logging in:', error);
       let errorMessage = 'Не удалось подключиться к серверу. Проверьте ваше интернет-соединение и повторите попытку.';
@@ -51,14 +61,19 @@ const LoginScreen = ({ navigation }) => {
   const loginUser = async (phoneNumber, password) => {
     try {
       const response = await axios.post(`${apiUrl}/login`, {
-        phoneNumber: phoneNumber,
-        password: password,
+        phoneNumber,
+        password,
       }, {
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
-      return response.data.token;
+
+      const { token, user } = response.data;
+      if (!token || !user) {
+        throw new Error('Missing token or user in response');
+      }
+      return { token, user };
     } catch (error) {
       console.error('Error logging in:', error);
       throw error;
@@ -80,14 +95,14 @@ const LoginScreen = ({ navigation }) => {
             value={phoneNumber}
             onChangeText={setPhoneNumber}
             keyboardType="phone-pad"
-            placeholder="Введите номер телефона"
+            placeholder="Номер телефона"
           />
           <TextInput
             style={styles.input}
             value={password}
             onChangeText={setPassword}
             secureTextEntry={true}
-            placeholder="Введите пароль"
+            placeholder="Пароль"
           />
           <Button title="Вход" onPress={handleLogin} />
         </>

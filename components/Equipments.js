@@ -1,65 +1,59 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Button } from 'react-native';
-import { Svg, Path } from 'react-native-svg';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
+import React, { useState, useContext, useEffect } from 'react';
+import { StyleSheet, View, SafeAreaView, Text, FlatList, RefreshControl } from 'react-native';
+import { ApiUrlContext } from './contexts/ApiUrlContext';
 
-export default function App() {
-  const [paths, setPaths] = useState([]);
-  const [currentPath, setCurrentPath] = useState('');
-  const svgRef = useRef(null);
+export default function Equip() {
+  const { apiUrl } = useContext(ApiUrlContext);
+  const [data, setData] = useState([]);
+  const [isConnected, setIsConnected] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const handleTouchMove = (event) => {
-    const { nativeEvent } = event;
-    const { locationX, locationY } = nativeEvent;
-    const updatedPath = `${currentPath} L${locationX},${locationY}`;
-    setCurrentPath(updatedPath);
-  };
-
-  const handleTouchStart = (event) => {
-    const { nativeEvent } = event;
-    const { locationX, locationY } = nativeEvent;
-    setCurrentPath(`M${locationX},${locationY}`);
-  };
-
-  const handleTouchEnd = () => {
-    setPaths([...paths, currentPath]);
-    setCurrentPath('');
-  };
-
-  const renderPaths = () => {
-    return paths.map((path, index) => <Path key={index} d={path} fill="none" stroke="black" strokeWidth="2" />);
-  };
-
-  const clearCanvas = () => {
-    setPaths([]);
-  };
-
-  const saveDrawing = async () => {
+  const fetchData = async () => {
     try {
-      const svgData = `
-        <svg height="200" width="200">
-          ${paths.map(path => `<path d="${path}" fill="none" stroke="black" stroke-width="2" />`).join('')}
-        </svg>
-      `;
-      const svgFileName = FileSystem.documentDirectory + 'drawing.svg';
-      await FileSystem.writeAsStringAsync(svgFileName, svgData);
-      await Sharing.shareAsync(svgFileName);
+      const response = await fetch(`${apiUrl}/equipment-data`); // Запрос к сервису
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const jsonData = await response.json(); // Преобразование ответа в JSON
+      setData(jsonData); // Установка полученных данных в состояние компонента
+      setIsConnected(true);
     } catch (error) {
-      console.error('Error saving drawing:', error);
+      console.error('Ошибка при получении данных:', error);
+      setIsConnected(false);
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [apiUrl]);
+
   return (
     <View style={styles.container}>
-      <Svg ref={svgRef} style={styles.canvas} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
-        {renderPaths()}
-        {currentPath !== '' && <Path d={currentPath} fill="none" stroke="black" strokeWidth="2" />}
-      </Svg>
-      <View style={styles.buttonContainer}>
-        <Button title="Очистить" onPress={clearCanvas} />
-        <Button title="Сохранить" onPress={saveDrawing} />
-      </View>
+      <SafeAreaView style={styles.main}>
+        {!isConnected && <Text style={styles.error}>Нет соединения с сервером</Text>}
+        <FlatList
+          data={data}
+          renderItem={({ item }) => (
+            <View style={styles.text}>
+              <Text>Оборудование: {item.Name}</Text>
+              <Text>Серийный номер: {item.SN}</Text>
+            </View>
+          )}
+          keyExtractor={(item) => item.idEquipment.toString()}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+            />
+          }
+        />
+      </SafeAreaView>
     </View>
   );
 }
@@ -67,18 +61,30 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  canvas: {
+  main: {
+    backgroundColor: '#e3e3e3',
     flex: 1,
-    width: '100%',
   },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    padding: 10,
+  text: {
+    padding: 20,
+    borderRadius: 5,
+    backgroundColor: '#FFFF',
+    margin: 5,
+    width: '98%',
+    marginLeft: '1%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+  },
+  error: {
+    color: 'red',
+    textAlign: 'center',
+    margin: 10,
   },
 });

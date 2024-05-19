@@ -10,6 +10,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'react-native';
 import { ApiUrlProvider } from './components/contexts/ApiUrlContext';
+import { UserProvider } from './components/contexts/UserContext';
 
 const Stack  = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -50,6 +51,7 @@ function TabNavigator() {
 export default function navigate() {
 
   return (
+    <UserProvider>
     <ApiUrlProvider>
       <NavigationContainer>
         <StatusBar backgroundColor="white" barStyle="dark-content" />
@@ -71,5 +73,6 @@ export default function navigate() {
         
         </NavigationContainer>
       </ApiUrlProvider>
+      </UserProvider>
   );
 }
