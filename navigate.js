@@ -4,6 +4,7 @@ import FullScreenInfo from './components/FullScreenInfo';
 import LoginScreen from './components/loginscreen';
 import Settings from './components/Settings';
 import Equipments from './components/Equipments';
+import BarcodeScannerScreen from './components/BarcodeScannerScreen';
 import { AntDesign } from '@expo/vector-icons';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -11,6 +12,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'react-native';
 import { ApiUrlProvider } from './components/contexts/ApiUrlContext';
 import { UserProvider } from './components/contexts/UserContext';
+
 
 const Stack  = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -69,8 +71,8 @@ export default function navigate() {
               title: 'Заявка № ' + route.params?.itemData.Number,
             })}
           />
+          <Stack.Screen name=" " component={ BarcodeScannerScreen } />
         </Stack.Navigator>
-        
         </NavigationContainer>
       </ApiUrlProvider>
       </UserProvider>
