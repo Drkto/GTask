@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { View, TextInput, Button, Alert, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, Animated } from 'react-native';
 import axios from 'axios';
 import { UserContext } from './contexts/UserContext';
 
@@ -8,6 +8,7 @@ const ChangePassword = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const { user } = useContext(UserContext);
+  const [buttonAnimation] = useState(new Animated.Value(1));
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
@@ -16,8 +17,15 @@ const ChangePassword = () => {
     }
 
     try {
+      // Начать анимацию
+      Animated.timing(buttonAnimation, {
+        toValue: 0.8,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
       const response = await axios.post('http://192.168.0.21:3000/change-password', {
-        userId: user.id, // Предполагая, что у вас есть идентификатор пользователя в контексте
+        userId: user.id,
         oldPassword,
         newPassword
       });
@@ -25,51 +33,93 @@ const ChangePassword = () => {
       if (response.status === 200) {
         Alert.alert('Успех', 'Пароль успешно изменен');
       } else {
-        Alert.alert('Ошибка', 'Не удалось изменить пароль');
+        const errorMessage = response.data?.error || 'Не удалось изменить пароль';
+        Alert.alert('Ошибка', errorMessage);
       }
     } catch (error) {
-      Alert.alert('Ошибка', 'Произошла ошибка при смене пароля');
+      console.error('Ошибка при смене пароля:', error);
+      const errorMessage = error.response?.data?.error || 'Произошла ошибка при смене пароля';
+      Alert.alert('Ошибка', errorMessage);
+    } finally {
+      // Завершить анимацию
+      Animated.timing(buttonAnimation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
     }
+  };
+
+  // Стили для анимации кнопки
+  const buttonStyle = {
+    transform: [{ scale: buttonAnimation }],
   };
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Старый пароль"
-        secureTextEntry
-        value={oldPassword}
-        onChangeText={setOldPassword}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Новый пароль"
-        secureTextEntry
-        value={newPassword}
-        onChangeText={setNewPassword}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Подтвердите новый пароль"
-        secureTextEntry
-        value={confirmPassword}
-        onChangeText={setConfirmPassword}
-      />
-      <Button title="Сменить пароль" onPress={handleChangePassword} />
+
+        <TextInput
+          style={styles.input}
+          placeholder="Старый пароль"
+          secureTextEntry
+          value={oldPassword}
+          onChangeText={setOldPassword}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Новый пароль"
+          secureTextEntry
+          value={newPassword}
+          onChangeText={setNewPassword}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Повторить пароль"
+          secureTextEntry
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+        />
+        <TouchableOpacity style={[styles.button, buttonStyle]} onPress={handleChangePassword}>
+          <Text style={styles.buttonText}>Сменить пароль</Text>
+        </TouchableOpacity>
+
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
+    backgroundColor: '#e3e3e3',
+    flex: 1,
+    padding: 10
+  },
+  formContainer: {
+    width: '80%',
+    alignItems: 'center',
+    paddingTop: 50, // Отступ сверху для размещения формы
   },
   input: {
+    width: '100%',
     height: 40,
-    borderColor: 'gray',
+    borderColor: '#fff',
     borderWidth: 1,
+    borderRadius: 5,
+    backgroundColor: '#fff',
     marginBottom: 20,
     paddingHorizontal: 10,
+  },
+  button: {
+    width: '100%',
+    height: 40,
+    backgroundColor: '#4287f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+  },
+  buttonText: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
 

@@ -1,14 +1,57 @@
-import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Button } from 'react-native';
-import { Svg, Path } from 'react-native-svg';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-
+import React, { useState, useEffect, useRef, useContext } from "react";
+import { StyleSheet, View, Button } from "react-native";
+import { Svg, Path } from "react-native-svg";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { UserContext } from "./contexts/UserContext";
 
 export default function App() {
+  const { user } = useContext(UserContext);
   const [paths, setPaths] = useState([]);
-  const [currentPath, setCurrentPath] = useState('');
+  const [currentPath, setCurrentPath] = useState("");
   const svgRef = useRef(null);
+
+  useEffect(() => {
+    loadDrawings();
+  }, []);
+
+  const loadDrawings = async () => {
+    try {
+      const savedDrawings = await AsyncStorage.getItem("drawings");
+      if (savedDrawings !== null) {
+        setPaths(JSON.parse(savedDrawings));
+      }
+    } catch (error) {
+      console.error("Failed to load drawings", error);
+    }
+  };
+
+  const saveDrawings = async () => {
+    try {
+      await AsyncStorage.setItem("drawings", JSON.stringify(paths));
+      if (user && user.id) {
+        await uploadDrawingsToServer();
+      }
+    } catch (error) {
+      console.error("Failed to save drawings", error);
+    }
+  };
+
+  const uploadDrawingsToServer = async () => {
+    try {
+      const response = await axios.post(
+        "http://192.168.0.21:3000/upload-drawing",
+        {
+          engineerId: user.id,
+          drawing: paths,
+        }
+      );
+
+      console.log("Drawings uploaded successfully:", response.data);
+    } catch (error) {
+      console.error("Failed to upload drawings", error);
+    }
+  };
 
   const handleTouchMove = (event) => {
     const { nativeEvent } = event;
@@ -25,41 +68,68 @@ export default function App() {
 
   const handleTouchEnd = () => {
     setPaths([...paths, currentPath]);
-    setCurrentPath('');
+    setCurrentPath("");
   };
 
   const renderPaths = () => {
-    return paths.map((path, index) => <Path key={index} d={path} fill="none" stroke="black" strokeWidth="2" />);
+    return paths.map((path, index) => (
+      <Path key={index} d={path} fill="none" stroke="black" strokeWidth="2" />
+    ));
   };
 
-  const clearCanvas = () => {
-    setPaths([]);
-  };
-
-  const saveDrawing = async () => {
+  const clearCanvas = async () => {
     try {
-      const svgData = `
-        <svg height="200" width="200">
-          ${paths.map(path => `<path d="${path}" fill="none" stroke="black" stroke-width="2" />`).join('')}
-        </svg>
-      `;
-      const svgFileName = FileSystem.documentDirectory + 'drawing.svg';
-      await FileSystem.writeAsStringAsync(svgFileName, svgData);
-      await Sharing.shareAsync(svgFileName);
+      setPaths([]);
+      await AsyncStorage.removeItem("drawings");
+      if (user && user.id) {
+        await deleteDrawingsFromServer();
+      }
     } catch (error) {
-      console.error('Error saving drawing:', error);
+      console.error("Failed to clear canvas", error);
+    }
+  };
+
+  const deleteDrawingsFromServer = async () => {
+    try {
+      const response = await axios.delete(
+        `http://192.168.0.21:3000/delete-drawings/${user.id}`
+      );
+      console.log("Drawings deleted from server:", response.data);
+    } catch (error) {
+      if (error.response) {
+        // Сервер вернул ответ с кодом состояния, который выходит за пределы диапазона 2xx
+        console.error(
+          "Server responded with status code:",
+          error.response.status
+        );
+        console.error("Response data:", error.response.data);
+      } else if (error.request) {
+        // Запрос был сделан, но ответа не получено
+        console.error("No response received:", error.request);
+      } else {
+        // Что-то случилось при настройке запроса, вызвав ошибку
+        console.error("Error setting up request:", error.message);
+      }
     }
   };
 
   return (
     <View style={styles.container}>
-      <Svg ref={svgRef} style={styles.canvas} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+      <Svg
+        ref={svgRef}
+        style={styles.canvas}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         {renderPaths()}
-        {currentPath !== '' && <Path d={currentPath} fill="none" stroke="black" strokeWidth="2" />}
+        {currentPath !== "" && (
+          <Path d={currentPath} fill="none" stroke="black" strokeWidth="2" />
+        )}
       </Svg>
       <View style={styles.buttonContainer}>
         <Button title="Очистить" onPress={clearCanvas} />
-        <Button title="Сохранить" onPress={saveDrawing} />
+        <Button title="Сохранить" onPress={saveDrawings} />
       </View>
     </View>
   );
@@ -68,18 +138,18 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: "white",
+    alignItems: "center",
+    justifyContent: "center",
   },
   canvas: {
     flex: 1,
-    width: '100%',
+    width: "100%",
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "center",
+    width: "100%",
     padding: 10,
   },
 });

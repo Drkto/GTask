@@ -1,16 +1,16 @@
-import React, { useContext } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
-import { AntDesign } from '@expo/vector-icons';
-import { UserContext } from './contexts/UserContext';
+import React, { useContext } from "react";
+import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
+import { AntDesign } from "@expo/vector-icons";
+import { UserContext } from "./contexts/UserContext";
 
 const clearToken = async () => {
   try {
-    await AsyncStorage.removeItem('token');
-    console.log('Токен успешно удален');
+    await AsyncStorage.removeItem("token");
+    console.log("Токен успешно удален");
   } catch (error) {
-    console.error('Ошибка при удалении токена:', error);
+    console.error("Ошибка при удалении токена:", error);
   }
 };
 
@@ -20,15 +20,15 @@ export default function Settings() {
 
   const handleLogout = async () => {
     await clearToken();
-    console.log('Токен очищен');
+    console.log("Токен очищен");
     navigation.reset({
       index: 0,
-      routes: [{ name: 'Login' }],
+      routes: [{ name: "Login" }],
     });
   };
 
   return (
-    <View>
+    <View style={styles.container}>
       <TouchableOpacity style={styles.button}>
         <View style={styles.iconTextContainer}>
           <AntDesign name="user" size={30} />
@@ -38,14 +38,20 @@ export default function Settings() {
         <Text style={styles.subText}>номер телефона {user.phone}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Смена Пароля')}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate("Смена Пароля")}
+      >
         <View style={styles.iconTextContainer}>
           <AntDesign name="lock" size={30} />
           <Text style={styles.text}>Смена пароля</Text>
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity
+        style={styles.button}
+        onPress={() => navigation.navigate("Подпись")}
+      >
         <View style={styles.iconTextContainer}>
           <AntDesign name="form" size={30} />
           <Text style={styles.text}>Графическая подпись</Text>
@@ -64,24 +70,26 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   container: {
+    backgroundColor: "#e3e3e3",
     flex: 1,
   },
+
   button: {
     padding: 20,
     borderRadius: 5,
-    backgroundColor: '#FFFF',
+    backgroundColor: "#FFFF",
     margin: 5,
-    width: '98%',
-    marginLeft: '1%',
-    shadowColor: '#000',
+    width: "98%",
+    marginLeft: "1%",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.22,
     shadowRadius: 2.22,
     elevation: 3,
   },
   iconTextContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   text: {
     marginLeft: 10,
@@ -90,6 +98,6 @@ const styles = StyleSheet.create({
   subText: {
     marginLeft: 40,
     fontSize: 14,
-    color: 'gray',
+    color: "gray",
   },
 });
