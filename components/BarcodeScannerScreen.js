@@ -2,11 +2,11 @@ import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useState } from 'react';
 import { Button, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-export default function App() {
+export default function App({route}) {
+  const { onScan, goBack  } = route.params; // Получаем функцию обратного вызова через параметры маршрута
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const [scannedData, setScannedData] = useState('');
-  const [inputValue, setInputValue] = useState('');
+
 
   if (!permission) {
     // Camera permissions are still loading.
@@ -25,9 +25,8 @@ export default function App() {
 
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
-    setScannedData(data);
-    setInputValue(data);
-    alert(`Bar code with type ${type} and data ${data} has been scanned!`);
+    onScan(data); // Вызываем функцию обратного вызова и передаем сканированное значение
+    goBack();
   };
   return (
     <View style={styles.container}>

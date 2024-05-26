@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { StyleSheet, Text, ScrollView, View, TouchableOpacity, Image, Button, Alert, TextInput } from 'react-native';
+import { StyleSheet, Text, ScrollView, View, TouchableOpacity, Image, Button, Alert, TextInput, LogBox } from 'react-native';
 import { useRoute } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
@@ -7,6 +7,10 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { ApiUrlContext } from './contexts/ApiUrlContext';
 import Icon from 'react-native-vector-icons/AntDesign';
 import { useNavigation } from '@react-navigation/native';
+//игнорируем ошибку 
+LogBox.ignoreLogs([
+  'Non-serializable values were found in the navigation state',
+]);
 
 
 function AttributesComponent() {
@@ -57,28 +61,22 @@ const BLOCK_CONFIGS = {
 };
 
 function JobsComponent() {
-  
   const { apiUrl } = useContext(ApiUrlContext);
-  const [images, setImages] = useState({
-    terminal: [],
-    serialnumber: [],
-    payment: [],
-    paymentkey: [],
-    cancel: [],
-    finalCheck: []
-  });
-  const [serialNumbers, setSerialNumbers] = useState({
-    terminal: '',
-    serialnumber: '',
-    payment: '',
-    paymentkey: '',
-    cancel: '',
-    finalCheck: ''
-  });
+  
+  const [blockStates, setBlockStates] = useState(
+    Object.keys(BLOCK_CONFIGS).reduce((acc, blockName) => {
+      acc[blockName] = {
+        images: {},
+        serialNumbers: '',
+        additionalSerialNumbers: [],
+      };
+      return acc;
+    }, {})
+  );
 
   const [openBlock, setOpenBlock] = useState(null);
 
-  const pickImage = async (blockName) => {
+  const pickImage = async (blockName, sectionName) => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
@@ -86,34 +84,43 @@ function JobsComponent() {
       quality: 1,
     });
     if (!result.canceled) {
-      setImages(prevImages => ({
-        ...prevImages,
-        [blockName]: [...prevImages[blockName], result.assets[0].uri]
+      setBlockStates((prevStates) => ({
+        ...prevStates,
+        [blockName]: {
+          ...prevStates[blockName],
+          images: {
+            ...prevStates[blockName].images,
+            [sectionName]: [...(prevStates[blockName].images[sectionName] || []), result.assets[0].uri],
+          },
+        },
       }));
     }
   };
 
   const uploadAllImages = async () => {
     const currentBlockConfig = BLOCK_CONFIGS[openBlock];
-    const missingSections = currentBlockConfig.sections.filter(section => images[section.name].length === 0);
+    const blockState = blockStates[openBlock];
+    const missingSections = currentBlockConfig.sections.filter((section) => !blockState.images[section.name] || blockState.images[section.name].length === 0);
 
     if (missingSections.length > 0) {
-      const missingSectionLabels = missingSections.map(section => section.label).join(', ');
+      const missingSectionLabels = missingSections.map((section) => section.label).join(', ');
       Alert.alert('Ошибка', `Необходимо загрузить фотографии для следующих секций: ${missingSectionLabels}`);
       return;
     }
 
     try {
       const formData = new FormData();
-      for (const blockName in images) {
-        for (const [index, imageUri] of images[blockName].entries()) {
-          const compressedImageUri = await compressImage(imageUri);
-          if (compressedImageUri) {
-            formData.append(`${blockName}[${index}]`, {
-              uri: compressedImageUri,
-              name: `${blockName}_${index}.jpg`,
-              type: 'image/jpg',
-            });
+      for (const blockName in blockStates) {
+        for (const sectionName in blockStates[blockName].images) {
+          for (const [index, imageUri] of blockStates[blockName].images[sectionName].entries()) {
+            const compressedImageUri = await compressImage(imageUri);
+            if (compressedImageUri) {
+              formData.append(`${blockName}_${sectionName}_${index}`, {
+                uri: compressedImageUri,
+                name: `${blockName}_${sectionName}_${index}.jpg`,
+                type: 'image/jpg',
+              });
+            }
           }
         }
       }
@@ -154,23 +161,37 @@ function JobsComponent() {
           title={config.title}
           description={config.description}
           blockName={blockName}
-          serialNumbers={serialNumbers} // Передаем serialNumbers в Block
-          setSerialNumbers={setSerialNumbers}
-          sections={config.sections}
+          blockState={blockStates[blockName]}
+          setBlockState={(newState) => setBlockStates((prevStates) => ({ ...prevStates, [blockName]: newState }))}
           pickImage={pickImage}
-          images={images}
           openBlock={openBlock}
           toggleBlock={toggleBlock}
         />
-        
       ))}
       <Button title="Завершить" onPress={uploadAllImages} />
     </ScrollView>
   );
 }
 
-const Block = ({ title, description, blockName, sections, pickImage, images, serialNumbers, setSerialNumbers, openBlock, toggleBlock }) => {
-  const navigation = useNavigation();  // Используйте useNavigation для получения объекта navigation
+const Block = ({ title, description, blockName, blockState, setBlockState, pickImage, openBlock, toggleBlock }) => {
+  const navigation = useNavigation();
+
+  const handleScannedSerialNumber = (scannedNumber) => {
+    setBlockState({ ...blockState, serialNumbers: scannedNumber });
+  };
+
+  const handleScannedAdditionalSerial = (scannedNumber, index) => {
+    const updatedAdditionalSerialNumbers = [...blockState.additionalSerialNumbers];
+    updatedAdditionalSerialNumbers[index] = scannedNumber;
+    setBlockState({ ...blockState, additionalSerialNumbers: updatedAdditionalSerialNumbers });
+  };
+
+  const addNewSerialNumberField = () => {
+    setBlockState({
+      ...blockState,
+      additionalSerialNumbers: [...blockState.additionalSerialNumbers, ''],
+    });
+  };
 
   return (
     <View style={styles.textContainer}>
@@ -180,26 +201,46 @@ const Block = ({ title, description, blockName, sections, pickImage, images, ser
       {openBlock === blockName && (
         <View>
           <Text style={styles.description}>{description}</Text>
-          {sections.map((section) => (
+          {BLOCK_CONFIGS[blockName].sections.map((section) => (
             <View key={section.name} style={styles.textContainer}>
-              <Text style={styles.text}>
-                {section.label}
-              </Text>
+              <Text style={styles.text}>{section.label}</Text>
               {section.name === 'serialnumber' ? (
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Введите серийный номер"
-                    value={serialNumbers[section.name]}
-                    onChangeText={(text) => setSerialNumbers({ ...serialNumbers, [section.name]: text })}
-                  />
-                  <TouchableOpacity onPress={() => navigation.navigate(' ')} style={styles.scanIcon}>
-                    <Icon name="scan1" size={20} style={{ marginLeft: 10 }} />
+                <>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Введите серийный номер"
+                      value={blockState.serialNumbers}
+                      onChangeText={(text) => setBlockState({ ...blockState, serialNumbers: text })}
+                    />
+                    <TouchableOpacity onPress={() => navigation.navigate('Scanner', { onScan: handleScannedSerialNumber, goBack: navigation.goBack })} style={styles.scanIcon}>
+                      <Icon name="scan1" size={20} style={{ marginLeft: 10 }} />
+                    </TouchableOpacity>
+                  </View>
+                  {blockState.additionalSerialNumbers.map((number, index) => (
+                    <View key={index} style={styles.inputContainer}>
+                      <TextInput
+                        style={styles.input}
+                        placeholder={`Дополнительный серийный номер ${index + 1}`}
+                        value={number}
+                        onChangeText={(text) => {
+                          const newAdditionalSerialNumbers = [...blockState.additionalSerialNumbers];
+                          newAdditionalSerialNumbers[index] = text;
+                          setBlockState({ ...blockState, additionalSerialNumbers: newAdditionalSerialNumbers });
+                        }}
+                      />
+                      <TouchableOpacity onPress={() => navigation.navigate('Scanner', { onScan: (scannedNumber) => handleScannedAdditionalSerial(scannedNumber, index), goBack: navigation.goBack })} style={styles.scanIcon}>
+                        <Icon name="scan1" size={20} style={{ marginLeft: 10 }} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  <TouchableOpacity onPress={addNewSerialNumberField} style={{ marginTop: 10 }}>
+                    <Text>Добавить еще серийный номер</Text>
                   </TouchableOpacity>
-                </View>
+                </>
               ) : (
-                <TouchableOpacity onPress={() => pickImage(section.name)} style={styles.imageContainer}>
-                  {images[section.name]?.map((uri, index) => (
+                <TouchableOpacity onPress={() => pickImage(blockName, section.name)} style={styles.imageContainer}>
+                  {blockState.images[section.name]?.map((uri, index) => (
                     <Image key={index} source={{ uri }} style={{ width: 50, height: 50 }} />
                   ))}
                   <Icon name={section.icon} size={20} color="#000" style={{}} />

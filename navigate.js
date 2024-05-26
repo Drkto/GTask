@@ -12,6 +12,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'react-native';
 import { ApiUrlProvider } from './components/contexts/ApiUrlContext';
 import { UserProvider } from './components/contexts/UserContext';
+import ChangePassword from './components/ChangePassword'
 
 
 const Stack  = createStackNavigator();
@@ -71,7 +72,8 @@ export default function navigate() {
               title: 'Заявка № ' + route.params?.itemData.Number,
             })}
           />
-          <Stack.Screen name=" " component={ BarcodeScannerScreen } />
+          <Stack.Screen name="Scanner" component={ BarcodeScannerScreen } />
+          <Stack.Screen name="Смена Пароля" component={ChangePassword} />
         </Stack.Navigator>
         </NavigationContainer>
       </ApiUrlProvider>
