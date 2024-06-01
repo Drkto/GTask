@@ -24,11 +24,12 @@ LogBox.ignoreLogs([
 ]);
 
 function AttributesComponent() {
+  
   const route = useRoute();
   const { itemData } = route.params;
   return (
     <ScrollView style={styles.main}>
-      <Text style={styles.textContainer}>
+      <Text selectable dataDetectorType="phoneNumber" style={styles.textContainer}>
         {JSON.stringify(itemData.Description).replace(/\\n/g, "\n")}
       </Text>
     </ScrollView>
@@ -44,8 +45,7 @@ const BLOCK_CONFIGS = {
       { name: "terminal", label: "Терминал (внешний вид)", icon: "download" },
       {
         name: "serialnumber",
-        label: "Терминал (серийный номер)",
-        icon: "download",
+        label: "Оборудование (серийный номер)",
       },
       { name: "payment", label: "Оплата", icon: "download" },
       { name: "paymentkey", label: "Оплата 5001", icon: "download" },
@@ -369,7 +369,9 @@ const Block = ({
 
 export default function FullScreenInfo() {
   const [currentScreen, setCurrentScreen] = useState("attributes");
-
+  const route = useRoute();
+  const { itemData } = route.params;
+  const isArchive = itemData.Status === 1;
   return (
     <View style={styles.container}>
       <View style={styles.mainButton}>
@@ -385,21 +387,23 @@ export default function FullScreenInfo() {
                 Атрибуты
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setCurrentScreen("jobs")}>
-              <Text
-                style={[
-                  styles.textButton,
-                  currentScreen === "jobs" ? styles.activeBox : null,
-                ]}
-              >
-                Работы
-              </Text>
-            </TouchableOpacity>
+            {!isArchive && ( // Скрыть кнопку "Работы" для архивных заявок
+              <TouchableOpacity onPress={() => setCurrentScreen("jobs")}>
+                <Text
+                  style={[
+                    styles.textButton,
+                    currentScreen === "jobs" ? styles.activeBox : null,
+                  ]}
+                >
+                  Работы
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </View>
       {currentScreen === "attributes" && <AttributesComponent />}
-      {currentScreen === "jobs" && <JobsComponent />}
+      {currentScreen === "jobs" && !isArchive && <JobsComponent />}
     </View>
   );
 }
@@ -407,6 +411,9 @@ export default function FullScreenInfo() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  phoneNumber:{
+    color: '#4287f5',
   },
   main: {
     backgroundColor: "#e3e3e3",

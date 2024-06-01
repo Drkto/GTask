@@ -2,8 +2,10 @@ import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet, Animated } from 'react-native';
 import axios from 'axios';
 import { UserContext } from './contexts/UserContext';
+import { ApiUrlContext } from './contexts/ApiUrlContext';
 
 const ChangePassword = () => {
+  const { apiUrl } = useContext(ApiUrlContext);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -24,7 +26,7 @@ const ChangePassword = () => {
         useNativeDriver: true,
       }).start();
 
-      const response = await axios.post('http://192.168.0.21:3000/change-password', {
+      const response = await axios.post(`${apiUrl}/change-password`, {
         userId: user.id,
         oldPassword,
         newPassword

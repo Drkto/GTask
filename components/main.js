@@ -7,16 +7,17 @@ import { ApiUrlContext } from './contexts/ApiUrlContext';
 function ActiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
   const LoadScene = (item) => {
     navigation.navigate('О Заявке', { itemData: item });
-  }
+  };
+
   const formatLastUpdated = () => {
     if (!lastUpdated) return 'Никогда';
-    
+
     const now = new Date();
     const diff = now - lastUpdated;
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
-    
+
     if (hours > 0) {
       return `Обновлено ${hours} ч. назад`;
     } else if (minutes > 0) {
@@ -25,12 +26,15 @@ function ActiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
       return `Обновлено ${seconds} сек. назад`;
     }
   };
+
   const formatDateTime = (dateTime) => {
     return moment(dateTime).format('lll');
   };
+
   const filterDataByActive = () => {
-    return data.filter(item => item.Status === 0); // фильтруем только активные заявки на инженере
+    return data.filter((item) => item.Status === 0); // фильтруем только активные заявки на инженере
   };
+
   return (
     <SafeAreaView style={styles.main}>
       <Text style={styles.lastUpdatedText}>{formatLastUpdated()}</Text>
@@ -38,35 +42,30 @@ function ActiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
         data={filterDataByActive()}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.text} onPress={() => LoadScene(item)}>
-            <Text style={{ flexDirection: "row", marginRight: 10 }}>
-              <Text>№ Заявки: {item.Number}  </Text>
+            <Text style={{ flexDirection: 'row', marginRight: 10 }}>
+              <Text>№ Заявки: {item.Number} </Text>
               <Text style={styles.activeBox}>{item.Service}</Text>
             </Text>
             <Text>Дата создания: {formatDateTime(item.Date)}</Text>
+            <Text numberOfLines={2}>Адрес: {item.Address}</Text>
           </TouchableOpacity>
         )}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-          />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
     </SafeAreaView>
   );
 }
 
-
 function ArchiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
   const formatLastUpdated = () => {
     if (!lastUpdated) return 'Никогда';
-    
+
     const now = new Date();
     const diff = now - lastUpdated;
     const seconds = Math.floor(diff / 1000);
     const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
-    
+
     if (hours > 0) {
       return `Обновлено ${hours} ч. назад`;
     } else if (minutes > 0) {
@@ -75,15 +74,19 @@ function ArchiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
       return `Обновлено ${seconds} сек. назад`;
     }
   };
+
   const LoadScene = (item) => {
     navigation.navigate('О Заявке', { itemData: item });
-  }
+  };
+
   const formatDateTime = (dateTime) => {
     return moment(dateTime).format('lll');
   };
+
   const filterDataByArchive = () => {
-    return data.filter(item => item.Status === 1); // фильтруем только архивные заявки на инженере
+    return data.filter((item) => item.Status === 1); // фильтруем только архивные заявки на инженере
   };
+
   return (
     <SafeAreaView style={styles.main}>
       <Text style={styles.lastUpdatedText}>{formatLastUpdated()}</Text>
@@ -91,19 +94,15 @@ function ArchiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
         data={filterDataByArchive()}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.text} onPress={() => LoadScene(item)}>
-            <Text style={{ flexDirection: "row" }}>
-              <Text>№ Заявки: {item.Number}  </Text>
+            <Text style={{ flexDirection: 'row' }}>
+              <Text>№ Заявки: {item.Number} </Text>
               <Text style={styles.activeBox}>{item.Service}</Text>
             </Text>
             <Text>Дата создания: {formatDateTime(item.Date)}</Text>
+            <Text numberOfLines={2}>Адрес: {item.Address}</Text>
           </TouchableOpacity>
         )}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-          />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
     </SafeAreaView>
   );
@@ -115,11 +114,19 @@ export default function Main({ navigation }) {
   const [currentScreen, setCurrentScreen] = useState('ActiveWork');
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
-
+  const [timer, setTimer] = useState(null);
 
   useEffect(() => {
     fetchData(); // Вызов функции для получения данных при монтировании компонента
   }, [apiUrl]);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setTimer(new Date());
+    }, 7000);
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -152,12 +159,17 @@ export default function Main({ navigation }) {
           </View>
         </View>
       </View>
-      {currentScreen === 'ActiveWork' && <ActiveWork data={data} navigation={navigation} onRefresh={onRefresh} refreshing={refreshing} lastUpdated={lastUpdated} />}
-      {currentScreen === 'ArchiveWork' && <ArchiveWork data={data} navigation={navigation} onRefresh={onRefresh} refreshing={refreshing} lastUpdated={lastUpdated} />}
+      {currentScreen === 'ActiveWork' && (
+        <ActiveWork data={data} navigation={navigation} onRefresh={onRefresh} refreshing={refreshing} lastUpdated={lastUpdated} />
+      )}
+      {currentScreen === 'ArchiveWork' && (
+        <ArchiveWork data={data} navigation={navigation} onRefresh={onRefresh} refreshing={refreshing} lastUpdated={lastUpdated} />
+      )}
       <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

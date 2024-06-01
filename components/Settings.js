@@ -29,14 +29,17 @@ export default function Settings() {
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.button}>
+      <View style={styles.button}>
         <View style={styles.iconTextContainer}>
           <AntDesign name="user" size={30} />
-          <Text style={styles.text}>Пользователь {user.FIO}</Text>
+          <View>
+            <Text style={styles.text}>Пользователь</Text>
+            <Text style={styles.text}>{user.FIO}</Text>
+          </View>
         </View>
         <Text style={styles.subText}>ID пользователя {user.id}</Text>
         <Text style={styles.subText}>номер телефона {user.phone}</Text>
-      </TouchableOpacity>
+      </View>
 
       <TouchableOpacity
         style={styles.button}

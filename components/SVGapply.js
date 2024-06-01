@@ -4,8 +4,11 @@ import { Svg, Path } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { UserContext } from "./contexts/UserContext";
+import { ApiUrlContext } from './contexts/ApiUrlContext';
+
 
 export default function App() {
+  const { apiUrl } = useContext(ApiUrlContext);
   const { user } = useContext(UserContext);
   const [paths, setPaths] = useState([]);
   const [currentPath, setCurrentPath] = useState("");
@@ -40,7 +43,7 @@ export default function App() {
   const uploadDrawingsToServer = async () => {
     try {
       const response = await axios.post(
-        "http://192.168.0.21:3000/upload-drawing",
+        `${apiUrl}/upload-drawing`,
         {
           engineerId: user.id,
           drawing: paths,
@@ -92,7 +95,7 @@ export default function App() {
   const deleteDrawingsFromServer = async () => {
     try {
       const response = await axios.delete(
-        `http://192.168.0.21:3000/delete-drawings/${user.id}`
+        `${apiUrl}/delete-drawings/${user.id}`
       );
       console.log("Drawings deleted from server:", response.data);
     } catch (error) {
