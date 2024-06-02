@@ -1,29 +1,18 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  FlatList,
-} from "react-native";
+import React from "react";
+import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { AntDesign } from "@expo/vector-icons";
 
 export default function Info() {
   const navigation = useNavigation();
-  const [news, setNews] = useState([]);
-
-  useEffect(() => {
-    // Здесь можно получить данные о новостях из вашего API
-    // Например, с помощью fetch или axios
-    // После этого обновите состояние news с полученными данными
-    // Например:
-    // fetchNews().then((data) => setNews(data));
-  }, []);
 
   const handlePressNews = () => {
     // Перейти на страницу списка новостей
-    navigation.navigate("Просмотр новости", { news });
+    navigation.navigate("Просмотр новости");
+  };
+  const handlePressKnowledge = () => {
+    // Перейти на страницу списка новостей
+    navigation.navigate("База знаний");
   };
 
   return (
@@ -34,7 +23,7 @@ export default function Info() {
           <Text style={styles.text}>Новости</Text>
         </View>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity style={styles.button} onPress={handlePressKnowledge}>
         <View style={styles.iconTextContainer}>
           <AntDesign name="book" size={30} />
           <Text style={styles.text}>База знаний</Text>

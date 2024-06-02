@@ -7,6 +7,7 @@ import Equipments from "./components/Equipments";
 import Info from "./components/Info";
 import BarcodeScannerScreen from "./components/BarcodeScannerScreen";
 import NewsList from "./components/NewsList";
+import KnowledgeBase from "./components/KnowledgeBase";
 import { AntDesign } from "@expo/vector-icons";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -91,6 +92,7 @@ export default function navigate() {
             <Stack.Screen name="Смена Пароля" component={ChangePassword} />
             <Stack.Screen name="Подпись" component={SVGapplay} />
             <Stack.Screen name="Просмотр новости" component={NewsList} />
+            <Stack.Screen name="База знаний" component={KnowledgeBase} />
           </Stack.Navigator>
         </NavigationContainer>
       </ApiUrlProvider>

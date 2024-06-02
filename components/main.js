@@ -9,11 +9,22 @@ import {
   StatusBar,
   RefreshControl,
 } from "react-native";
-import moment from "moment"; // формат времени для ленивых
-import "moment/locale/ru"; // ru контент
+import moment from "moment";
+import "moment/locale/ru";
 import { ApiUrlContext } from "./contexts/ApiUrlContext";
+import { UserContext } from "./contexts/UserContext";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-function ActiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
+// Компонент для активных заявок
+function ActiveWork({
+  data,
+  navigation,
+  onRefresh,
+  refreshing,
+  lastUpdated,
+  networkError,
+}) {
   const LoadScene = (item) => {
     navigation.navigate("О Заявке", { itemData: item });
   };
@@ -41,11 +52,16 @@ function ActiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
   };
 
   const filterDataByActive = () => {
-    return data.filter((item) => item.Status === 0); // фильтруем только активные заявки на инженере
+    return data.filter((item) => item.Status === 0);
   };
 
   return (
     <SafeAreaView style={styles.main}>
+      {networkError && (
+        <Text style={styles.errorText}>
+          Отсутствует подключение к интернету.
+        </Text>
+      )}
       <FlatList
         ListHeaderComponent={() => (
           <Text style={styles.lastUpdatedText}>{formatLastUpdated()}</Text>
@@ -69,7 +85,19 @@ function ActiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
   );
 }
 
-function ArchiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
+// Компонент для архивных заявок
+function ArchiveWork({
+  data,
+  navigation,
+  onRefresh,
+  refreshing,
+  lastUpdated,
+  networkError,
+}) {
+  const LoadScene = (item) => {
+    navigation.navigate("О Заявке", { itemData: item });
+  };
+
   const formatLastUpdated = () => {
     if (!lastUpdated) return "Никогда";
 
@@ -88,20 +116,21 @@ function ArchiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
     }
   };
 
-  const LoadScene = (item) => {
-    navigation.navigate("О Заявке", { itemData: item });
-  };
-
   const formatDateTime = (dateTime) => {
     return moment(dateTime).format("lll");
   };
 
   const filterDataByArchive = () => {
-    return data.filter((item) => item.Status === 1); // фильтруем только архивные заявки на инженере
+    return data.filter((item) => item.Status === 1);
   };
 
   return (
     <SafeAreaView style={styles.main}>
+      {networkError && (
+        <Text style={styles.errorText}>
+          Отсутствует подключение к интернету.
+        </Text>
+      )}
       <FlatList
         ListHeaderComponent={() => (
           <Text style={styles.lastUpdatedText}>{formatLastUpdated()}</Text>
@@ -127,15 +156,25 @@ function ArchiveWork({ data, navigation, onRefresh, refreshing, lastUpdated }) {
 
 export default function Main({ navigation }) {
   const { apiUrl } = useContext(ApiUrlContext);
+  const { user } = useContext(UserContext);
   const [data, setData] = useState([]);
   const [currentScreen, setCurrentScreen] = useState("ActiveWork");
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [timer, setTimer] = useState(null);
+  const [networkError, setNetworkError] = useState(false);
 
   useEffect(() => {
-    fetchData(); // Вызов функции для получения данных при монтировании компонента
-  }, [apiUrl]);
+    const initializeData = async () => {
+      const localData = await loadDataFromLocalStorage();
+      setData(localData);
+      if (user && user.id) {
+        fetchData(user.id);
+      }
+    };
+
+    initializeData();
+  }, [apiUrl, user]);
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -145,21 +184,60 @@ export default function Main({ navigation }) {
     return () => clearInterval(intervalId);
   }, []);
 
-  const fetchData = async () => {
+  const fetchData = async (idEngineer) => {
+    setRefreshing(true);
     try {
-      const response = await fetch(`${apiUrl}/data`); // Запрос к сервису
-      const jsonData = await response.json(); // Преобразование ответа в JSON
-      setData(jsonData); // Установка полученных данных в состояние компонента
-      setLastUpdated(new Date()); // Установка времени последнего обновления
+      const response = await axios.get(`${apiUrl}/data/${idEngineer}`);
+      const fetchedData = response.data;
+      setData(fetchedData);
+      setLastUpdated(new Date());
+      await saveDataToLocalStorage(fetchedData);
+      setNetworkError(false);
     } catch (error) {
-      console.error("Ошибка при получении данных:", error);
+      console.error("Ошибка при загрузке данных", error);
+      if (error.message === "Network Error") {
+        setNetworkError(true);
+        setTimeout(() => {
+          setNetworkError(false);
+        }, 5000);
+      } else {
+        const localData = await loadDataFromLocalStorage();
+        setData(localData);
+      }
     }
+    setRefreshing(false);
   };
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchData();
-    setRefreshing(false);
+    if (user && user.id) {
+      setRefreshing(true);
+      await fetchData(user.id);
+      setRefreshing(false);
+    }
+  };
+
+  const saveDataToLocalStorage = async (data) => {
+    try {
+      await AsyncStorage.setItem("requests", JSON.stringify(data));
+    } catch (error) {
+      console.error(
+        "Ошибка при сохранении данных в локальное хранилище",
+        error
+      );
+    }
+  };
+
+  const loadDataFromLocalStorage = async () => {
+    try {
+      const data = await AsyncStorage.getItem("requests");
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error(
+        "Ошибка при загрузке данных из локального хранилища",
+        error
+      );
+      return [];
+    }
   };
 
   return (
@@ -197,6 +275,7 @@ export default function Main({ navigation }) {
           onRefresh={onRefresh}
           refreshing={refreshing}
           lastUpdated={lastUpdated}
+          networkError={networkError}
         />
       )}
       {currentScreen === "ArchiveWork" && (
@@ -206,6 +285,7 @@ export default function Main({ navigation }) {
           onRefresh={onRefresh}
           refreshing={refreshing}
           lastUpdated={lastUpdated}
+          networkError={networkError}
         />
       )}
       <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />

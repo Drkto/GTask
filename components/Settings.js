@@ -61,7 +61,10 @@ export default function Settings() {
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogout}>
+      <TouchableOpacity
+        style={[styles.button, styles.exit]}
+        onPress={handleLogout}
+      >
         <View style={styles.iconTextContainer}>
           <AntDesign name="logout" size={30} />
           <Text style={styles.text}>Выход</Text>
@@ -76,7 +79,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#e3e3e3",
     flex: 1,
   },
-
+  exit: {
+    backgroundColor: "#4287f5",
+    color: "white",
+  },
   button: {
     padding: 20,
     borderRadius: 5,

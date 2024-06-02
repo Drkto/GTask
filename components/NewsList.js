@@ -19,11 +19,14 @@ export default function NewsList() {
   const [page, setPage] = useState(1);
   const [selectedNewsId, setSelectedNewsId] = useState(null);
   const [timezone, setTimezone] = useState(null); // Состояние для часовой зоны
+  const [hasMoreData, setHasMoreData] = useState(true);
 
   useEffect(() => {
-    loadNews();
+    if (hasMoreData) {
+      loadNews(page);
+    }
     fetchTimezone(); // Получение часовой зоны при загрузке компонента
-  }, []);
+  }, [page]);
 
   const fetchTimezone = () => {
     const deviceTimezone = Constants.timezone;
@@ -38,7 +41,7 @@ export default function NewsList() {
     }
   };
 
-  const loadNews = async () => {
+  const loadNews = async (page) => {
     setIsLoading(true);
     try {
       const response = await axios.get(
@@ -46,6 +49,9 @@ export default function NewsList() {
       );
       const newNews = response.data;
       setNews((prevNews) => [...prevNews, ...newNews]);
+      if (newNews.length < 10) {
+        setHasMoreData(false);
+      }
     } catch (error) {
       console.error("Ошибка при загрузке новостей", error);
     }
@@ -103,8 +109,16 @@ const styles = StyleSheet.create({
   },
   newsItem: {
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#ccc",
+    borderRadius: 5,
+    backgroundColor: "#FFFF",
+    margin: 5,
+    width: "98%",
+    marginLeft: "1%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
   },
   newsTitle: {
     fontSize: 18,
