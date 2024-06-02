@@ -4,7 +4,9 @@ import FullScreenInfo from "./components/FullScreenInfo";
 import LoginScreen from "./components/loginscreen";
 import Settings from "./components/Settings";
 import Equipments from "./components/Equipments";
+import Info from "./components/Info";
 import BarcodeScannerScreen from "./components/BarcodeScannerScreen";
+import NewsList from "./components/NewsList";
 import { AntDesign } from "@expo/vector-icons";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -36,6 +38,15 @@ function TabNavigator() {
         options={{
           tabBarIcon: ({ color, size }) => (
             <AntDesign name="tool" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Информация"
+        component={Info}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <AntDesign name="info" size={size} color={color} />
           ),
         }}
       />
@@ -79,6 +90,7 @@ export default function navigate() {
             <Stack.Screen name="Scanner" component={BarcodeScannerScreen} />
             <Stack.Screen name="Смена Пароля" component={ChangePassword} />
             <Stack.Screen name="Подпись" component={SVGapplay} />
+            <Stack.Screen name="Просмотр новости" component={NewsList} />
           </Stack.Navigator>
         </NavigationContainer>
       </ApiUrlProvider>
