@@ -22,20 +22,23 @@ import { useNavigation } from "@react-navigation/native";
 LogBox.ignoreLogs([
   "Non-serializable values were found in the navigation state",
 ]);
-
+//описание
 function AttributesComponent() {
-  
   const route = useRoute();
   const { itemData } = route.params;
   return (
     <ScrollView style={styles.main}>
-      <Text selectable dataDetectorType="phoneNumber" style={styles.textContainer}>
+      <Text
+        selectable
+        dataDetectorType="phoneNumber"
+        style={styles.textContainer}
+      >
         {JSON.stringify(itemData.Description).replace(/\\n/g, "\n")}
       </Text>
     </ScrollView>
   );
 }
-
+// конфигурационный блок исполнений
 const BLOCK_CONFIGS = {
   installation: {
     title: "Монтаж",
@@ -43,10 +46,7 @@ const BLOCK_CONFIGS = {
     sections: [
       { name: "layout", label: "Место монтажа", icon: "download" },
       { name: "terminal", label: "Терминал (внешний вид)", icon: "download" },
-      {
-        name: "serialnumber",
-        label: "Оборудование (серийный номер)",
-      },
+      { name: "serialnumber", label: "Оборудование (серийный номер)" },
       { name: "payment", label: "Оплата", icon: "download" },
       { name: "paymentkey", label: "Оплата 5001", icon: "download" },
       { name: "cancel", label: "Отмена", icon: "download" },
@@ -55,6 +55,8 @@ const BLOCK_CONFIGS = {
         label: "Финальная сверка итогов",
         icon: "download",
       },
+      { name: "comment", label: "Описание работ" },
+      { name: "doc", label: "Акт выполненных работ", icon: "download" },
     ],
   },
   dismantling: {
@@ -68,6 +70,8 @@ const BLOCK_CONFIGS = {
         label: "Терминал (серийный номер)",
         icon: "download",
       },
+      { name: "comment", label: "Описание работ" },
+      { name: "doc", label: "Акт выполненных работ", icon: "download" },
     ],
   },
   restoration: {
@@ -75,18 +79,38 @@ const BLOCK_CONFIGS = {
     description: "Описание процесса сервиса.",
     sections: [
       // Добавьте соответствующие секции для восстановления
-      { name: "serialnumber", label: "Терминал (серийный номер)" },
-      { name: "payment", label: "Оплата" },
-      { name: "paymentkey", label: "Оплата 5001" },
-      { name: "cancel", label: "Отмена" },
-      { name: "finalCheck", label: "Финальная сверка итогов" },
+      {
+        name: "serialnumber",
+        label: "Терминал (серийный номер)",
+        icon: "download",
+      },
+      { name: "payment", label: "Оплата", icon: "download" },
+      { name: "paymentkey", label: "Оплата 5001", icon: "download" },
+      { name: "cancel", label: "Отмена", icon: "download" },
+      {
+        name: "finalCheck",
+        label: "Финальная сверка итогов",
+        icon: "download",
+      },
+      { name: "comment", label: "Описание работ" },
+      { name: "doc", label: "Акт выполненных работ", icon: "download" },
+    ],
+  },
+  cancel: {
+    title: "Отказ/Ложный",
+    description: "Описание процесса отказа/ложного.",
+    sections: [
+      // Добавьте соответствующие секции для отказа/ложного
+
+      { name: "comment", label: "Описание работ" },
+      { name: "doc", label: "Акт выполненных работ", icon: "download" },
     ],
   },
 };
-
-function JobsComponent() {
+//исполнение заявок
+function JobsComponent({ requestNumber }) {
   const { apiUrl } = useContext(ApiUrlContext);
-
+  const navigation = useNavigation();
   const [blockStates, setBlockStates] = useState(
     Object.keys(BLOCK_CONFIGS).reduce((acc, blockName) => {
       acc[blockName] = {
@@ -124,52 +148,147 @@ function JobsComponent() {
     }
   };
 
-  const uploadAllImages = async () => {
+  const deleteImage = (blockName, sectionName, imageIndex) => {
+    setBlockStates((prevStates) => {
+      const newImages = [...prevStates[blockName].images[sectionName]];
+      newImages.splice(imageIndex, 1);
+      return {
+        ...prevStates,
+        [blockName]: {
+          ...prevStates[blockName],
+          images: {
+            ...prevStates[blockName].images,
+            [sectionName]: newImages,
+          },
+        },
+      };
+    });
+  };
+
+  const handleCloseRequest = async () => {
+    Alert.alert(
+      "Закрыть заявку",
+      "Вы уверены, что хотите закрыть заявку?",
+      [
+        {
+          text: "Нет",
+          onPress: () => console.log("Отмена закрытия заявки"),
+          style: "cancel",
+        },
+        {
+          text: "Да",
+          onPress: async () => {
+            const currentBlockConfig = BLOCK_CONFIGS[openBlock];
+            const blockState = blockStates[openBlock];
+
+            let errorMessage = "";
+
+            // Проверка выбора работы
+            if (
+              !currentBlockConfig ||
+              Object.keys(blockState.images).length === 0
+            ) {
+              errorMessage +=
+                "Сначала приложите отчет по выполненной работе.\n";
+            }
+
+            if (errorMessage) {
+              Alert.alert("Ошибка", errorMessage.trim());
+              return;
+            }
+
+            // Отправка отчета на сервер
+            try {
+              // Ваш код отправки отчета на сервер
+              await uploadAllImages(requestNumber, blockState.comments);
+
+              // Вернуть пользователя на список заявок
+              navigation.navigate("Заявки");
+            } catch (error) {
+              console.error("Ошибка при закрытии заявки", error);
+              Alert.alert(
+                "Ошибка",
+                `Произошла ошибка при закрытии заявки: ${error.message}`
+              );
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  const uploadAllImages = async (requestNumber, description) => {
     const currentBlockConfig = BLOCK_CONFIGS[openBlock];
     const blockState = blockStates[openBlock];
-    const missingSections = currentBlockConfig.sections.filter(
+    const sectionsWithImages = currentBlockConfig.sections.filter(
+      (section) => section.name !== "serialnumber" && section.name !== "comment"
+    );
+
+    const missingSections = sectionsWithImages.filter(
       (section) =>
         !blockState.images[section.name] ||
         blockState.images[section.name].length === 0
     );
 
+    let errorMessage = "";
+
     if (missingSections.length > 0) {
       const missingSectionLabels = missingSections
         .map((section) => section.label)
         .join(", ");
-      Alert.alert(
-        "Ошибка",
-        `Необходимо загрузить фотографии для следующих секций: ${missingSectionLabels}`
-      );
-      return;
+      errorMessage += `Необходимо загрузить фотографии для следующих секций: ${missingSectionLabels}\n`;
+    }
+
+    if (errorMessage) {
+      throw new Error(errorMessage.trim());
     }
 
     try {
       const formData = new FormData();
       for (const blockName in blockStates) {
         for (const sectionName in blockStates[blockName].images) {
-          for (const [index, imageUri] of blockStates[blockName].images[
-            sectionName
-          ].entries()) {
-            const compressedImageUri = await compressImage(imageUri);
-            if (compressedImageUri) {
-              formData.append(`${blockName}_${sectionName}_${index}`, {
-                uri: compressedImageUri,
-                name: `${blockName}_${sectionName}_${index}.jpg`,
-                type: "image/jpg",
-              });
+          if (
+            sectionsWithImages.some((section) => section.name === sectionName)
+          ) {
+            for (const [index, imageUri] of blockStates[blockName].images[
+              sectionName
+            ].entries()) {
+              const compressedImageUri = await compressImage(imageUri);
+              if (compressedImageUri) {
+                const fileName = `${requestNumber}_${currentBlockConfig.title}_${sectionName}_${index}.jpg`;
+                formData.append(`${blockName}_${sectionName}_${index}`, {
+                  uri: compressedImageUri,
+                  name: fileName,
+                  type: "image/jpg",
+                });
+              }
             }
           }
         }
       }
+
       const response = await axios.post(`${apiUrl}/upload`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
+        params: {
+          requestNumber: requestNumber, // Передача номера заявки в качестве параметра
+          description: description,
+        },
       });
-      Alert.alert("Success", "All images uploaded successfully");
+
+      if (response.status === 200) {
+        Alert.alert("Успех", "Все изображения успешно загружены");
+      } else {
+        throw new Error(
+          "Failed to upload images: Server responded with status " +
+            response.status
+        );
+      }
     } catch (error) {
-      Alert.alert("Error", "Failed to upload images");
+      console.error("Ошибка при загрузке изображений", error);
+      throw new Error(`Ошибка при загрузке изображений: ${error.message}`);
     }
   };
 
@@ -207,11 +326,12 @@ function JobsComponent() {
             }))
           }
           pickImage={pickImage}
+          deleteImage={deleteImage}
           openBlock={openBlock}
           toggleBlock={toggleBlock}
         />
       ))}
-      <Button title="Завершить" onPress={uploadAllImages} />
+      <Button title="Закрыть заявку" onPress={handleCloseRequest} />
     </ScrollView>
   );
 }
@@ -225,6 +345,7 @@ const Block = ({
   pickImage,
   openBlock,
   toggleBlock,
+  deleteImage,
 }) => {
   const navigation = useNavigation();
 
@@ -250,10 +371,14 @@ const Block = ({
     });
   };
 
+  const handleCommentChange = (text) => {
+    setBlockState({ ...blockState, comments: text });
+  };
+
   return (
     <View style={styles.textContainer}>
       <TouchableOpacity onPress={() => toggleBlock(blockName)}>
-        <View style={styles.titleContainer}>
+        <View>
           <Text style={styles.BoldText}>{title}</Text>
         </View>
       </TouchableOpacity>
@@ -266,36 +391,31 @@ const Block = ({
                 style={{
                   flexDirection: "row",
                   justifyContent: "space-between",
+                  alignItems: "center",
                 }}
               >
                 <Text style={styles.text}>{section.label}</Text>
-                {section.name !== "serialnumber" && (
-                  <TouchableOpacity
-                    onPress={() => pickImage(blockName, section.name)}
-                    style={[styles.imageContainer, { flexDirection: "row" }]}
-                  >
-                    {blockState.images[section.name]?.map((uri, index) => (
-                      <Image
-                        key={index}
-                        source={{ uri }}
-                        style={{ width: 50, height: 50 }}
+                {section.name !== "serialnumber" &&
+                  section.name !== "comment" && (
+                    <TouchableOpacity
+                      onPress={() => pickImage(blockName, section.name)}
+                      style={[styles.imageContainer, { flexDirection: "row" }]}
+                    >
+                      <Icon
+                        name={section.icon}
+                        size={20}
+                        color="#000"
+                        style={{ marginLeft: 10 }}
                       />
-                    ))}
-                    <Icon
-                      name={section.icon}
-                      size={20}
-                      color="#000"
-                      style={{ marginLeft: 10 }}
-                    />
-                  </TouchableOpacity>
-                )}
+                    </TouchableOpacity>
+                  )}
               </View>
               {section.name === "serialnumber" ? (
                 <>
                   <View style={styles.inputContainer}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Введите серийный номер"
+                      placeholder="Серийный номер"
                       value={blockState.serialNumbers}
                       onChangeText={(text) =>
                         setBlockState({ ...blockState, serialNumbers: text })
@@ -358,7 +478,29 @@ const Block = ({
                     <Text>Добавить еще серийный номер</Text>
                   </TouchableOpacity>
                 </>
-              ) : null}
+              ) : section.name === "comment" ? (
+                <TextInput
+                  style={styles.input}
+                  value={blockState.comments}
+                  onChangeText={handleCommentChange}
+                />
+              ) : (
+                <View style={styles.imageRow}>
+                  {blockState.images[section.name]?.map((uri, index) => (
+                    <View key={index} style={styles.imageWrapper}>
+                      <Image source={{ uri }} style={styles.image} />
+                      <TouchableOpacity
+                        style={styles.deleteIcon}
+                        onPress={() =>
+                          deleteImage(blockName, section.name, index)
+                        }
+                      >
+                        <Icon name="closecircle" size={20} color="#FF0000" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
           ))}
         </View>
@@ -403,7 +545,9 @@ export default function FullScreenInfo() {
         </View>
       </View>
       {currentScreen === "attributes" && <AttributesComponent />}
-      {currentScreen === "jobs" && !isArchive && <JobsComponent />}
+      {currentScreen === "jobs" && !isArchive && (
+        <JobsComponent requestNumber={itemData.Number} />
+      )}
     </View>
   );
 }
@@ -412,8 +556,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  phoneNumber:{
-    color: '#4287f5',
+  phoneNumber: {
+    color: "#4287f5",
   },
   main: {
     backgroundColor: "#e3e3e3",
@@ -471,19 +615,41 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 16,
   },
+  imageRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginVertical: 10,
+  },
+  imageWrapper: {
+    position: "relative",
+    marginRight: 10,
+    marginBottom: 10,
+  },
+  image: {
+    width: 50,
+    height: 50,
+    borderRadius: 5,
+  },
+  deleteIcon: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+  },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
+    marginVertical: 5,
   },
   input: {
-    margin: 5,
     flex: 1,
-    borderWidth: 1,
+    borderBottomWidth: 1,
     borderColor: "black",
-    borderRadius: 5,
-    padding: 10,
+    padding: 5,
+    backgroundColor: "#fff",
   },
   scanIcon: {
-    marginLeft: 10,
+    padding: 5,
   },
 });

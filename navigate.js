@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Main from "./components/main";
 import FullScreenInfo from "./components/FullScreenInfo";
 import LoginScreen from "./components/loginscreen";
@@ -12,7 +12,7 @@ import { AntDesign } from "@expo/vector-icons";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
-import { StatusBar } from "react-native";
+import { StatusBar, TouchableOpacity, View, TextInput } from "react-native";
 import { ApiUrlProvider } from "./components/contexts/ApiUrlContext";
 import { UserProvider } from "./components/contexts/UserContext";
 import ChangePassword from "./components/ChangePassword";
@@ -22,16 +22,19 @@ const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function TabNavigator() {
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchText, setSearchText] = useState("");
   return (
     <Tab.Navigator>
       <Tab.Screen
         name="Заявки"
         component={Main}
-        options={{
+        initialParams={{ searchVisible, searchText }}
+        options={() => ({
           tabBarIcon: ({ color, size }) => (
             <AntDesign name="profile" size={size} color={color} />
           ),
-        }}
+        })}
       />
       <Tab.Screen
         name="Оборудование"

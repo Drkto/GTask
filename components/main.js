@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useLayoutEffect } from "react";
 import {
   StyleSheet,
   View,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StatusBar,
   RefreshControl,
+  TextInput,
 } from "react-native";
 import moment from "moment";
 import "moment/locale/ru";
@@ -15,6 +16,7 @@ import { ApiUrlContext } from "./contexts/ApiUrlContext";
 import { UserContext } from "./contexts/UserContext";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import AntDesign from "react-native-vector-icons/AntDesign";
 
 // Компонент для активных заявок
 function ActiveWork({
@@ -24,11 +26,11 @@ function ActiveWork({
   refreshing,
   lastUpdated,
   networkError,
+  route,
 }) {
   const LoadScene = (item) => {
     navigation.navigate("О Заявке", { itemData: item });
   };
-
   const formatLastUpdated = () => {
     if (!lastUpdated) return "Никогда";
 
@@ -155,6 +157,8 @@ function ArchiveWork({
 }
 
 export default function Main({ navigation }) {
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchText, setSearchText] = useState("");
   const { apiUrl } = useContext(ApiUrlContext);
   const { user } = useContext(UserContext);
   const [data, setData] = useState([]);
@@ -164,6 +168,50 @@ export default function Main({ navigation }) {
   const [timer, setTimer] = useState(null);
   const [networkError, setNetworkError] = useState(false);
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={{ flexDirection: "row" }}>
+          {searchVisible ? (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                flex: 1,
+              }}
+            >
+              <TextInput
+                style={{
+                  flex: 1,
+                  borderWidth: 0,
+                  borderBottomWidth: 1,
+                  borderColor: "#A5A5A5",
+                  padding: 5,
+                  marginRight: 5,
+                }}
+                placeholder="Поиск..."
+                onChangeText={(text) => setSearchText(text)}
+                value={searchText} // Устанавливаем значение текста поиска
+              />
+              <TouchableOpacity
+                onPress={() => setSearchVisible(false)}
+                style={{ marginRight: 15, justifyContent: "center" }}
+              >
+                <AntDesign name="closecircle" size={20} color="black" />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              onPress={() => setSearchVisible(true)}
+              style={{ marginRight: 15 }}
+            >
+              <AntDesign name="search1" size={24} color="black" />
+            </TouchableOpacity>
+          )}
+        </View>
+      ),
+    });
+  }, [navigation, searchVisible, searchText]);
   useEffect(() => {
     const initializeData = async () => {
       const localData = await loadDataFromLocalStorage();
@@ -208,6 +256,19 @@ export default function Main({ navigation }) {
     setRefreshing(false);
   };
 
+  const filterDataBySearch = (searchText) => {
+    const lowerSearchText = searchText.toLowerCase();
+    return data.filter((item) => {
+      // Проверяем номер заявки, текст заявки и адрес на соответствие тексту поиска
+      return (
+        item.Number.toString().includes(lowerSearchText) ||
+        item.Service.toLowerCase().includes(lowerSearchText) ||
+        item.Address.toLowerCase().includes(lowerSearchText) ||
+        item.Description.toLowerCase().includes(lowerSearchText) // Проверка текста внутри заявки
+      );
+    });
+  };
+
   const onRefresh = async () => {
     if (user && user.id) {
       setRefreshing(true);
@@ -240,6 +301,13 @@ export default function Main({ navigation }) {
     }
   };
 
+  // Функция для фильтрации данных по тексту
+  const filterDataByText = () => {
+    return data.filter((item) =>
+      item.Address.toLowerCase().includes(searchText.toLowerCase())
+    );
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.mainButton}>
@@ -270,7 +338,7 @@ export default function Main({ navigation }) {
       </View>
       {currentScreen === "ActiveWork" && (
         <ActiveWork
-          data={data}
+          data={filterDataBySearch(searchText)}
           navigation={navigation}
           onRefresh={onRefresh}
           refreshing={refreshing}
@@ -280,7 +348,7 @@ export default function Main({ navigation }) {
       )}
       {currentScreen === "ArchiveWork" && (
         <ArchiveWork
-          data={data}
+          data={filterDataBySearch(searchText)}
           navigation={navigation}
           onRefresh={onRefresh}
           refreshing={refreshing}
