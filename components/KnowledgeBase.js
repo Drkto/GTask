@@ -43,7 +43,7 @@ export default function KnowledgeBase() {
   };
 
   const handleLoadMore = () => {
-    if (!isLoading) {
+    if (!isLoading && hasMoreData) {
       setPage((prevPage) => prevPage + 1);
     }
   };

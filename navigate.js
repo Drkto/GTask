@@ -92,7 +92,7 @@ export default function navigate() {
               })}
             />
             <Stack.Screen name="Scanner" component={BarcodeScannerScreen} />
-            <Stack.Screen name="Смена Пароля" component={ChangePassword} />
+            <Stack.Screen name="Смена пароля" component={ChangePassword} />
             <Stack.Screen name="Подпись" component={SVGapplay} />
             <Stack.Screen name="Просмотр новости" component={NewsList} />
             <Stack.Screen name="База знаний" component={KnowledgeBase} />

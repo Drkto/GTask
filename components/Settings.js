@@ -43,7 +43,7 @@ export default function Settings() {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate("Смена Пароля")}
+        onPress={() => navigation.navigate("Смена пароля")}
       >
         <View style={styles.iconTextContainer}>
           <AntDesign name="lock" size={30} />

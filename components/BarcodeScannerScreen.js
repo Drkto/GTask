@@ -1,8 +1,10 @@
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useState } from "react";
 import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 
 export default function App({ route }) {
+  const navigation = useNavigation();
   const { onScan, goBack } = route.params; // Получаем функцию обратного вызова через параметры маршрута
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -27,7 +29,11 @@ export default function App({ route }) {
   const handleBarCodeScanned = ({ type, data }) => {
     setScanned(true);
     onScan(data); // Вызываем функцию обратного вызова и передаем сканированное значение
-    goBack();
+    if (goBack) {
+      goBack(); // Если определена функция goBack, вызываем ее для возврата назад
+    } else {
+      navigation.navigate("Оборудование"); // Если нет, используем навигацию для возврата
+    }
   };
   return (
     <View style={styles.container}>

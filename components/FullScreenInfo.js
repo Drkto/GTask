@@ -81,8 +81,7 @@ const BLOCK_CONFIGS = {
       // Добавьте соответствующие секции для восстановления
       {
         name: "serialnumber",
-        label: "Терминал (серийный номер)",
-        icon: "download",
+        label: "Оборудование (серийный номер)",
       },
       { name: "payment", label: "Оплата", icon: "download" },
       { name: "paymentkey", label: "Оплата 5001", icon: "download" },
@@ -97,11 +96,10 @@ const BLOCK_CONFIGS = {
     ],
   },
   cancel: {
-    title: "Отказ/Ложный",
-    description: "Описание процесса отказа/ложного.",
+    title: "Отказ",
+    description: "Описание процесса отказа",
     sections: [
       // Добавьте соответствующие секции для отказа/ложного
-
       { name: "comment", label: "Описание работ" },
       { name: "doc", label: "Акт выполненных работ", icon: "download" },
     ],
@@ -131,7 +129,8 @@ function JobsComponent({ requestNumber }) {
       aspect: [4, 3],
       quality: 1,
     });
-    if (!result.canceled) {
+    if (!result.cancelled) {
+      console.log("Добавлено изображение:", result.assets[0].uri);
       setBlockStates((prevStates) => ({
         ...prevStates,
         [blockName]: {
@@ -220,7 +219,11 @@ function JobsComponent({ requestNumber }) {
 
   const uploadAllImages = async (requestNumber, description) => {
     const currentBlockConfig = BLOCK_CONFIGS[openBlock];
+    console.log("Current Block Config:", currentBlockConfig);
+
     const blockState = blockStates[openBlock];
+    console.log("Block State:", blockState);
+
     const sectionsWithImages = currentBlockConfig.sections.filter(
       (section) => section.name !== "serialnumber" && section.name !== "comment"
     );
@@ -254,6 +257,8 @@ function JobsComponent({ requestNumber }) {
             for (const [index, imageUri] of blockStates[blockName].images[
               sectionName
             ].entries()) {
+              console.log("Image URI:", imageUri);
+
               const compressedImageUri = await compressImage(imageUri);
               if (compressedImageUri) {
                 const fileName = `${requestNumber}_${currentBlockConfig.title}_${sectionName}_${index}.jpg`;
@@ -268,18 +273,22 @@ function JobsComponent({ requestNumber }) {
         }
       }
 
+      console.log("Form Data:", formData); // Добавим этот лог
+
       const response = await axios.post(`${apiUrl}/upload`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
         params: {
-          requestNumber: requestNumber, // Передача номера заявки в качестве параметра
+          requestNumber: requestNumber,
           description: description,
         },
       });
 
+      console.log("Server Response:", response);
+
       if (response.status === 200) {
-        Alert.alert("Успех", "Все изображения успешно загружены");
+        Alert.alert("Успех", "Заявка закрыта");
       } else {
         throw new Error(
           "Failed to upload images: Server responded with status " +
@@ -287,7 +296,10 @@ function JobsComponent({ requestNumber }) {
         );
       }
     } catch (error) {
-      console.error("Ошибка при загрузке изображений", error);
+      console.error(
+        "Ошибка закрытии заявки",
+        error.response ? error.response.data : error.message
+      );
       throw new Error(`Ошибка при загрузке изображений: ${error.message}`);
     }
   };

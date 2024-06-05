@@ -26,11 +26,11 @@ function ActiveWork({
   refreshing,
   lastUpdated,
   networkError,
-  route,
 }) {
   const LoadScene = (item) => {
     navigation.navigate("О Заявке", { itemData: item });
   };
+
   const formatLastUpdated = () => {
     if (!lastUpdated) return "Никогда";
 
@@ -50,6 +50,7 @@ function ActiveWork({
   };
 
   const formatDateTime = (dateTime) => {
+    if (!dateTime) return "N/A";
     return moment(dateTime).format("lll");
   };
 
@@ -72,11 +73,13 @@ function ActiveWork({
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.text} onPress={() => LoadScene(item)}>
             <Text style={{ flexDirection: "row", marginRight: 10 }}>
-              <Text>№ Заявки: {item.Number} </Text>
-              <Text style={styles.activeBox}>{item.Service}</Text>
+              <Text>№ Заявки: {item.Number || "N/A"} </Text>
+              <Text style={styles.activeBox}>{item.Service || "N/A"}</Text>
             </Text>
-            <Text>Дата создания: {formatDateTime(item.Date)}</Text>
-            <Text numberOfLines={2}>Адрес: {item.Address}</Text>
+            <Text>
+              Дата создания: {item.Date ? formatDateTime(item.Date) : "N/A"}
+            </Text>
+            <Text numberOfLines={2}>Адрес: {item.Address || "N/A"}</Text>
           </TouchableOpacity>
         )}
         refreshControl={
@@ -141,11 +144,13 @@ function ArchiveWork({
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.text} onPress={() => LoadScene(item)}>
             <Text style={{ flexDirection: "row" }}>
-              <Text>№ Заявки: {item.Number} </Text>
-              <Text style={styles.activeBox}>{item.Service}</Text>
+              <Text>№ Заявки: {item.Number || "N/A"} </Text>
+              <Text style={styles.activeBox}>{item.Service || "N/A"}</Text>
             </Text>
-            <Text>Дата создания: {formatDateTime(item.Date)}</Text>
-            <Text numberOfLines={2}>Адрес: {item.Address}</Text>
+            <Text>
+              Дата создания: {item.Date ? formatDateTime(item.Date) : "N/A"}
+            </Text>
+            <Text numberOfLines={2}>Адрес: {item.Address || "N/A"}</Text>
           </TouchableOpacity>
         )}
         refreshControl={
@@ -167,6 +172,13 @@ export default function Main({ navigation }) {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [timer, setTimer] = useState(null);
   const [networkError, setNetworkError] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      onRefresh(); // Вызываем функцию refresh при каждом фокусировании на экране
+    });
+    return unsubscribe;
+  }, [navigation]); // navigation добавляем в зависимости, чтобы useEffect сработал при каждом изменении этой переменной
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -259,12 +271,15 @@ export default function Main({ navigation }) {
   const filterDataBySearch = (searchText) => {
     const lowerSearchText = searchText.toLowerCase();
     return data.filter((item) => {
-      // Проверяем номер заявки, текст заявки и адрес на соответствие тексту поиска
+      // Проверяем наличие полей перед использованием
       return (
-        item.Number.toString().includes(lowerSearchText) ||
-        item.Service.toLowerCase().includes(lowerSearchText) ||
-        item.Address.toLowerCase().includes(lowerSearchText) ||
-        item.Description.toLowerCase().includes(lowerSearchText) // Проверка текста внутри заявки
+        (item.Number && item.Number.toString().includes(lowerSearchText)) ||
+        (item.Service &&
+          item.Service.toLowerCase().includes(lowerSearchText)) ||
+        (item.Address &&
+          item.Address.toLowerCase().includes(lowerSearchText)) ||
+        (item.Description &&
+          item.Description.toLowerCase().includes(lowerSearchText))
       );
     });
   };
@@ -299,13 +314,6 @@ export default function Main({ navigation }) {
       );
       return [];
     }
-  };
-
-  // Функция для фильтрации данных по тексту
-  const filterDataByText = () => {
-    return data.filter((item) =>
-      item.Address.toLowerCase().includes(searchText.toLowerCase())
-    );
   };
 
   return (
