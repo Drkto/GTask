@@ -10,8 +10,10 @@ import axios from "axios";
 import { ApiUrlContext } from "./contexts/ApiUrlContext";
 import moment from "moment";
 import "moment/locale/ru";
+import { UserContext } from "./contexts/UserContext";
 
 export default function KnowledgeBase() {
+  const { user } = useContext(UserContext);
   const { apiUrl } = useContext(ApiUrlContext);
   const [knowledgeBase, setKnowledgeBase] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,15 +23,15 @@ export default function KnowledgeBase() {
 
   useEffect(() => {
     if (hasMoreData) {
-      loadKnowledgeBase(page);
+      loadKnowledgeBase(page, user.id);
     }
   }, [page]);
 
-  const loadKnowledgeBase = async (page) => {
+  const loadKnowledgeBase = async (page, idEngineer) => {
     setIsLoading(true);
     try {
       const response = await axios.get(
-        `${apiUrl}/knowledge_base?page=${page}&limit=10`
+        `${apiUrl}/knowledge_base/${idEngineer}?page=${page}&limit=10`
       );
       const newItems = response.data;
       setKnowledgeBase((prevItems) => [...prevItems, ...newItems]);

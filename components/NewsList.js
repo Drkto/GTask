@@ -11,8 +11,10 @@ import { ApiUrlContext } from "./contexts/ApiUrlContext";
 import moment from "moment"; // формат времени для ленивых
 import "moment/locale/ru"; // ru контент
 import Constants from "expo-constants";
+import { UserContext } from "./contexts/UserContext";
 
 export default function NewsList() {
+  const { user } = useContext(UserContext);
   const { apiUrl } = useContext(ApiUrlContext);
   const [news, setNews] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -23,7 +25,7 @@ export default function NewsList() {
 
   useEffect(() => {
     if (hasMoreData) {
-      loadNews(page);
+      loadNews(page, user.id);
     }
     fetchTimezone(); // Получение часовой зоны при загрузке компонента
   }, [page]);
@@ -41,11 +43,11 @@ export default function NewsList() {
     }
   };
 
-  const loadNews = async (page) => {
+  const loadNews = async (page, idEngineer) => {
     setIsLoading(true);
     try {
       const response = await axios.get(
-        `${apiUrl}/data_news?page=${page}&limit=10`
+        `${apiUrl}/data_news/${idEngineer}?page=${page}&limit=10`
       );
       const newNews = response.data;
       setNews((prevNews) => [...prevNews, ...newNews]);

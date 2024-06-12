@@ -56,7 +56,6 @@ function Stock({ data, isConnected, refreshing, onRefresh }) {
 }
 
 function Broadcast({ apiUrl, data }) {
-  const { user } = useContext(UserContext);
   const [engineerName, setEngineerName] = useState("");
   const [engineerFound, setEngineerFound] = useState(false);
   const [engineers, setEngineers] = useState([]);
