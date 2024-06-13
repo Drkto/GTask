@@ -126,12 +126,14 @@ function JobsComponent({ requestNumber }) {
   const pickImage = async (blockName, sectionName) => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
       allowsEditing: false,
       aspect: [4, 3],
       quality: 1,
     });
-    if (!result.cancelled) {
-      console.log("Добавлено изображение:", result.assets[0].uri);
+    if (!result.canceled) {
+      const selectedImages = result.assets.map((asset) => asset.uri);
+
       setBlockStates((prevStates) => ({
         ...prevStates,
         [blockName]: {
@@ -140,7 +142,7 @@ function JobsComponent({ requestNumber }) {
             ...prevStates[blockName].images,
             [sectionName]: [
               ...(prevStates[blockName].images[sectionName] || []),
-              result.assets[0].uri,
+              ...selectedImages,
             ],
           },
         },
