@@ -115,6 +115,7 @@ function JobsComponent({ requestNumber }) {
         images: {},
         serialNumbers: "",
         additionalSerialNumbers: [],
+        comments: "", // добавлено для хранения комментариев
       };
       return acc;
     }, {})
@@ -177,6 +178,11 @@ function JobsComponent({ requestNumber }) {
         {
           text: "Да",
           onPress: async () => {
+            if (!openBlock || !blockStates[openBlock]) {
+              Alert.alert("Ошибка", "Выберите блок для закрытия заявки.");
+              return;
+            }
+
             const currentBlockConfig = BLOCK_CONFIGS[openBlock];
             const blockState = blockStates[openBlock];
 
@@ -191,6 +197,12 @@ function JobsComponent({ requestNumber }) {
                 "Сначала приложите отчет по выполненной работе.\n";
             }
 
+            // Проверка серийного номера
+            if (!blockState.serialNumbers) {
+              errorMessage +=
+                "Необходимо указать серийный номер оборудования.\n";
+            }
+
             if (errorMessage) {
               Alert.alert("Ошибка", errorMessage.trim());
               return;
@@ -198,8 +210,12 @@ function JobsComponent({ requestNumber }) {
 
             // Отправка отчета на сервер
             try {
-              // Ваш код отправки отчета на сервер
-              await uploadAllImages(requestNumber, blockState.comments);
+              await uploadAllImages(
+                requestNumber,
+                blockState.comments,
+                openBlock, // передаем тип работы (openBlock)
+                currentBlockConfig.title
+              );
 
               // Вернуть пользователя на список заявок
               navigation.navigate("Заявки");
@@ -217,12 +233,18 @@ function JobsComponent({ requestNumber }) {
     );
   };
 
-  const uploadAllImages = async (requestNumber, description) => {
+  const uploadAllImages = async (
+    requestNumber,
+    description,
+    openBlock,
+    blockTitle
+  ) => {
     const currentBlockConfig = BLOCK_CONFIGS[openBlock];
-    console.log("Current Block Config:", currentBlockConfig);
-
     const blockState = blockStates[openBlock];
-    console.log("Block State:", blockState);
+    const serialNumbers = [
+      blockState.serialNumbers,
+      ...blockState.additionalSerialNumbers,
+    ].filter(Boolean);
 
     const sectionsWithImages = currentBlockConfig.sections.filter(
       (section) => section.name !== "serialnumber" && section.name !== "comment"
@@ -257,8 +279,6 @@ function JobsComponent({ requestNumber }) {
             for (const [index, imageUri] of blockStates[blockName].images[
               sectionName
             ].entries()) {
-              console.log("Image URI:", imageUri);
-
               const compressedImageUri = await compressImage(imageUri);
               if (compressedImageUri) {
                 const fileName = `${requestNumber}_${currentBlockConfig.title}_${sectionName}_${index}.jpg`;
@@ -273,7 +293,8 @@ function JobsComponent({ requestNumber }) {
         }
       }
 
-      console.log("Form Data:", formData); // Добавим этот лог
+      const serialNumbersString = serialNumbers.join(",");
+      console.log(serialNumbers);
 
       const response = await axios.post(`${apiUrl}/upload`, formData, {
         headers: {
@@ -282,10 +303,10 @@ function JobsComponent({ requestNumber }) {
         params: {
           requestNumber: requestNumber,
           description: description,
+          serialNumbers: serialNumbersString,
+          blockTitle: blockTitle,
         },
       });
-
-      console.log("Server Response:", response);
 
       if (response.status === 200) {
         Alert.alert("Успех", "Заявка закрыта");

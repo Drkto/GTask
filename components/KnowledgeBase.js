@@ -64,7 +64,7 @@ export default function KnowledgeBase() {
       {selectedItemId === item.idKnowledgebase && (
         <View style={styles.selectedItemContainer}>
           <Text style={styles.description}>{item.description}</Text>
-          <Text style={styles.category}>Категория: {item.category}</Text>
+          <Text style={styles.category}>Категория: {item.category_name}</Text>
         </View>
       )}
     </TouchableOpacity>

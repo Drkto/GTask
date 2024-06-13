@@ -75,15 +75,15 @@ export default function NewsList() {
       style={styles.newsItem}
       onPress={() => handlePressNews(item.idNews)}
     >
-      <Text style={styles.newsTitle}>{item.title}</Text>
+      <Text style={styles.newsTitle}>{item.Title}</Text>
       <Text style={styles.dateText}>
-        Дата публикации: {formatDateTime(item.publication_date)}
+        Дата публикации: {formatDateTime(item.Publication_date)}
       </Text>
+      <Text style={styles.authorText}>{item.category_name}</Text>
       {selectedNewsId === item.idNews && (
         <View style={styles.selectedNewsContainer}>
-          <Text style={styles.authorText}>Автор: {item.author}</Text>
           <View style={styles.separator} />
-          <Text style={styles.selectedNewsText}>{item.text}</Text>
+          <Text style={styles.selectedNewsText}>{item.Text}</Text>
         </View>
       )}
     </TouchableOpacity>
