@@ -1,15 +1,15 @@
 {
   "expo": {
-    "name": "GTask_Test",
-    "slug": "GTask_Test",
+    "name": "GTask",
+    "slug": "GTask",
     "icon": "./assets/icon.png",
-    "version": "1.0.0",
+    "version": "1.0.1",
       "splash": {
         "image": "./assets/splash.png",
         "backgroundColor": "#ffffff"
       },
     "android": {
-      "package": "com.gtask.GTask_Test"
+      "package": "com.GTask"
     },
     "extra": {
       "eas": {

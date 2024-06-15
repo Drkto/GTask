@@ -1,4 +1,4 @@
-rootProject.name = 'GTask_Test'
+rootProject.name = 'GTask'
 
 dependencyResolutionManagement {
   versionCatalogs {

@@ -1,4 +1,4 @@
-package com.gtask.GTask_Test
+package com.GTask
 
 import android.os.Build
 import android.os.Bundle
