@@ -21,6 +21,15 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
 
+  const handleChangeText = (text) => {
+    // Удаляем все пробелы
+    let cleanedText = text.replace(/\s+/g, "");
+    // Ограничиваем длину номера до 11 символов
+    if (cleanedText.length > 11) {
+      cleanedText = cleanedText.slice(0, 11);
+    }
+    setPhoneNumber(cleanedText);
+  };
   useEffect(() => {
     checkLoggedIn();
   }, []);
@@ -102,7 +111,7 @@ const LoginScreen = ({ navigation }) => {
           <TextInput
             style={styles.input}
             value={phoneNumber}
-            onChangeText={setPhoneNumber}
+            onChangeText={handleChangeText}
             keyboardType="phone-pad"
             placeholder="Номер телефона"
           />

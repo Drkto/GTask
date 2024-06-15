@@ -55,7 +55,7 @@ function Stock({ data, isConnected, refreshing, onRefresh }) {
   );
 }
 
-function Broadcast({ apiUrl, data }) {
+function Broadcast({ apiUrl, data, user }) {
   const [engineerName, setEngineerName] = useState("");
   const [engineerFound, setEngineerFound] = useState(false);
   const [engineers, setEngineers] = useState([]);
@@ -89,17 +89,27 @@ function Broadcast({ apiUrl, data }) {
 
   const handleSearchEngineer = async () => {
     try {
+      console.log(
+        `Отправка запроса на: ${apiUrl}/engineers?name=${engineerName}`
+      );
       const response = await fetch(`${apiUrl}/engineers?name=${engineerName}`);
+
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
+
       const jsonData = await response.json();
+      console.log("Полученные данные:", jsonData);
+
       const filteredEngineers = jsonData.filter(
         (engineer) => engineer.idEngineer !== user.id
       );
       setEngineers(filteredEngineers);
       setEngineerFound(filteredEngineers.length > 0);
+
+      console.log("Результаты фильтрации:", filteredEngineers);
     } catch (error) {
+      console.error("Ошибка при запросе инженеров:", error);
       setEngineerFound(false);
     }
   };
@@ -134,7 +144,6 @@ function Broadcast({ apiUrl, data }) {
               size={25}
               color="red"
               marginLeft={10}
-              onPress={handleEngineerDeselect}
             />
           </View>
           <ScrollView>
@@ -169,12 +178,9 @@ function Broadcast({ apiUrl, data }) {
               value={engineerName}
               onChangeText={setEngineerName}
             />
-            <AntDesign
-              name="search1"
-              size={30}
-              marginLeft={20}
-              onPress={handleSearchEngineer}
-            />
+            <TouchableOpacity onPress={handleSearchEngineer}>
+              <AntDesign name="search1" size={30} marginLeft={20} />
+            </TouchableOpacity>
           </View>
           {engineerFound && (
             <View style={styles.text}>
@@ -283,7 +289,7 @@ export default function Equip() {
         />
       )}
       {currentScreen === "Broadcast" && (
-        <Broadcast apiUrl={apiUrl} data={data} />
+        <Broadcast apiUrl={apiUrl} data={data} user={user} />
       )}
     </View>
   );
