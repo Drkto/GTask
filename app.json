@@ -5,7 +5,8 @@
     "icon": "./assets/icon.png",
     "version": "1.0.0",
       "splash": {
-        "image": "./assets/splash.png"
+        "image": "./assets/splash.png",
+        "backgroundColor": "#ffffff"
       },
     "android": {
       "package": "com.gtask.GTask_Test"
@@ -21,7 +22,8 @@
   },
   "android": {
     "adaptiveIcon":{
-      "foreagroundImage": "./assets/adaptiveIcon.png"
+      "foreagroundImage": "./assets/adaptiveIcon.png",
+      "backgroundColor": "#ffffff"
     }
   },
   "plugins": [
