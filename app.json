@@ -15,7 +15,11 @@
       "expo-asset"
     ]
   },
-  "android": {},
+  "android": [{
+    "splash": {
+      "image": "./assets/images/splash.png"
+    }
+  }],
   "plugins": [
     [
       "expo-image-picker",
@@ -31,3 +35,4 @@
     ]
   ]
 }
+
