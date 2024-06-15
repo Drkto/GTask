@@ -2,7 +2,11 @@
   "expo": {
     "name": "GTask_Test",
     "slug": "GTask_Test",
+    "icon": "./assets/icon.png",
     "version": "1.0.0",
+      "splash": {
+        "image": "./assets/splash.png"
+      },
     "android": {
       "package": "com.gtask.GTask_Test"
     },
@@ -15,11 +19,11 @@
       "expo-asset"
     ]
   },
-  "android": [{
-    "splash": {
-      "image": "./assets/images/splash.png"
+  "android": {
+    "adaptiveIcon":{
+      "foreagroundImage": "./assets/adaptiveIcon.png"
     }
-  }],
+  },
   "plugins": [
     [
       "expo-image-picker",
