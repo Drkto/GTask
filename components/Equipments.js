@@ -144,6 +144,7 @@ function Broadcast({ apiUrl, data, user }) {
               size={25}
               color="red"
               marginLeft={10}
+              onPress={handleEngineerDeselect}
             />
           </View>
           <ScrollView>
