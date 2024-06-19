@@ -16,6 +16,7 @@ import { ApiUrlContext } from "./contexts/ApiUrlContext";
 import { useNavigation } from "@react-navigation/native";
 import { UserContext } from "./contexts/UserContext";
 import AntDesign from "react-native-vector-icons/AntDesign";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 
 function Stock({ data, isConnected, refreshing, onRefresh }) {
@@ -226,8 +227,13 @@ export default function Equip() {
       const jsonData = await response.json();
       setData(jsonData);
       setIsConnected(true);
+      await AsyncStorage.setItem("equipmentData", JSON.stringify(jsonData));
     } catch (error) {
       setIsConnected(false);
+      const cachedData = await AsyncStorage.getItem("equipmentData");
+      if (cachedData) {
+        setData(JSON.parse(cachedData));
+      }
     }
   };
 
@@ -242,7 +248,14 @@ export default function Equip() {
   };
 
   useEffect(() => {
-    fetchData();
+    const loadData = async () => {
+      const cachedData = await AsyncStorage.getItem("equipmentData");
+      if (cachedData) {
+        setData(JSON.parse(cachedData));
+      }
+      fetchData();
+    };
+    loadData();
   }, []);
 
   useEffect(() => {

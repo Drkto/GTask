@@ -15,21 +15,20 @@ import { ApiUrlContext } from "./contexts/ApiUrlContext";
 import { UserContext } from "./contexts/UserContext";
 
 const LoginScreen = ({ navigation }) => {
-  const { apiUrl, toggleApiUrl } = useContext(ApiUrlContext);
+  const { apiUrl } = useContext(ApiUrlContext);
   const { setUser } = useContext(UserContext);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
 
   const handleChangeText = (text) => {
-    // Удаляем все пробелы
     let cleanedText = text.replace(/\s+/g, "");
-    // Ограничиваем длину номера до 11 символов
     if (cleanedText.length > 11) {
       cleanedText = cleanedText.slice(0, 11);
     }
     setPhoneNumber(cleanedText);
   };
+
   useEffect(() => {
     checkLoggedIn();
   }, []);
@@ -39,12 +38,22 @@ const LoginScreen = ({ navigation }) => {
       const token = await AsyncStorage.getItem("token");
       const user = await AsyncStorage.getItem("user");
       if (token && user) {
-        setUser(JSON.parse(user));
-        setLoggedIn(true);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Main" }],
-        });
+        const parsedUser = JSON.parse(user);
+        const isActive = await checkUserStatus(parsedUser.id);
+        if (isActive) {
+          setUser(parsedUser);
+          setLoggedIn(true);
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Main" }],
+          });
+        } else {
+          await logoutUser();
+          Alert.alert(
+            "Ошибка",
+            "Пользователь не активен. Пожалуйста, свяжитесь с менеджером."
+          );
+        }
       }
     } catch (error) {
       console.error("Error checking logged in status:", error);
@@ -57,7 +66,7 @@ const LoginScreen = ({ navigation }) => {
       if (response.token && response.user) {
         await AsyncStorage.setItem("token", response.token);
         await AsyncStorage.setItem("user", JSON.stringify(response.user));
-        setUser(response.user); // Устанавливаем пользователя в контексте
+        setUser(response.user);
         setLoggedIn(true);
         navigation.reset({
           index: 0,
@@ -70,8 +79,13 @@ const LoginScreen = ({ navigation }) => {
       console.error("Error logging in:", error);
       let errorMessage =
         "Не удалось подключиться к серверу. Проверьте ваше интернет-соединение и повторите попытку.";
-      if (error.response && error.response.data && error.response.data.error) {
-        errorMessage += `\nКод ошибки: ${error.response.data.error}`;
+      if (error.response) {
+        if (error.response.status === 403) {
+          errorMessage =
+            "Пользователь не активен. Пожалуйста, свяжитесь с менеджером.";
+        } else if (error.response.data && error.response.data.error) {
+          errorMessage = `Ошибка: ${error.response.data.error}`;
+        }
       }
       Alert.alert("Ошибка", errorMessage);
     }
@@ -91,7 +105,6 @@ const LoginScreen = ({ navigation }) => {
           },
         }
       );
-
       const { token, user } = response.data;
       if (!token || !user) {
         throw new Error("Missing token or user in response");
@@ -101,6 +114,27 @@ const LoginScreen = ({ navigation }) => {
       console.error("Error logging in:", error);
       throw error;
     }
+  };
+
+  const checkUserStatus = async (userId) => {
+    try {
+      const response = await axios.get(`${apiUrl}/user/status/${userId}`);
+      return response.data.status === 1;
+    } catch (error) {
+      console.error("Error checking user status:", error);
+      return false;
+    }
+  };
+
+  const logoutUser = async () => {
+    await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("user");
+    setUser(null);
+    setLoggedIn(false);
+    navigation.reset({
+      index: 0,
+      routes: [{ name: "Login" }],
+    });
   };
 
   return (
