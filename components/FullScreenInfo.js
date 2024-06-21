@@ -185,8 +185,13 @@ function JobsComponent({ requestNumber }) {
                 "Сначала приложите отчет по выполненной работе.\n";
             }
 
-            // Проверка серийного номера
-            if (!blockState.serialNumbers) {
+            // Проверка серийного номера, только если блок его требует
+            if (
+              currentBlockConfig.sections.some(
+                (section) => section.name === "serialnumber"
+              ) &&
+              !blockState.serialNumbers
+            ) {
               errorMessage +=
                 "Необходимо указать серийный номер оборудования.\n";
             }
