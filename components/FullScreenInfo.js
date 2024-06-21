@@ -47,14 +47,7 @@ const BLOCK_CONFIGS = {
       { name: "layout", label: "Место монтажа", icon: "download" },
       { name: "terminal", label: "Терминал (внешний вид)", icon: "download" },
       { name: "serialnumber", label: "Оборудование (серийный номер)" },
-      { name: "payment", label: "Оплата", icon: "download" },
-      { name: "paymentkey", label: "Оплата 5001", icon: "download" },
-      { name: "cancel", label: "Отмена", icon: "download" },
-      {
-        name: "finalCheck",
-        label: "Финальная сверка итогов",
-        icon: "download",
-      },
+      { name: "payment", label: "Тестовые операции", icon: "download" },
       { name: "comment", label: "Описание работ" },
       { name: "doc", label: "Акт выполненных работ", icon: "download" },
     ],
@@ -83,14 +76,7 @@ const BLOCK_CONFIGS = {
         name: "serialnumber",
         label: "Оборудование (серийный номер)",
       },
-      { name: "payment", label: "Оплата", icon: "download" },
-      { name: "paymentkey", label: "Оплата 5001", icon: "download" },
-      { name: "cancel", label: "Отмена", icon: "download" },
-      {
-        name: "finalCheck",
-        label: "Финальная сверка итогов",
-        icon: "download",
-      },
+      { name: "payment", label: "Тестовые операции", icon: "download" },
       { name: "comment", label: "Описание работ" },
       { name: "doc", label: "Акт выполненных работ", icon: "download" },
     ],
@@ -210,12 +196,11 @@ function JobsComponent({ requestNumber }) {
               return;
             }
 
-            // Отправка отчета на сервер
             try {
               await uploadAllImages(
                 requestNumber,
                 blockState.comments,
-                openBlock, // передаем тип работы (openBlock)
+                openBlock,
                 currentBlockConfig.title
               );
 
@@ -281,7 +266,10 @@ function JobsComponent({ requestNumber }) {
             for (const [index, imageUri] of blockStates[blockName].images[
               sectionName
             ].entries()) {
-              const compressedImageUri = await compressImage(imageUri);
+              const compressedImageUri = await compressImage(
+                imageUri,
+                sectionName // Передаем sectionName для определения качества сжатия
+              );
               if (compressedImageUri) {
                 const fileName = `${requestNumber}_${currentBlockConfig.title}_${sectionName}_${index}.jpg`;
                 formData.append(`${blockName}_${sectionName}_${index}`, {
@@ -327,12 +315,19 @@ function JobsComponent({ requestNumber }) {
     }
   };
 
-  const compressImage = async (uri) => {
+  const compressImage = async (uri, sectionName) => {
     try {
+      let compressionOptions = { compress: 0.5, format: "jpeg" };
+
+      // Увеличиваем качество сжатия для акта выполненных работ
+      if (sectionName === "doc") {
+        compressionOptions = { compress: 0.8, format: "jpeg" };
+      }
+
       const manipulatedImage = await ImageManipulator.manipulateAsync(
         uri,
         [{ resize: { width: 800 } }],
-        { compress: 0.5, format: "jpeg" }
+        compressionOptions
       );
       return manipulatedImage.uri;
     } catch (error) {
