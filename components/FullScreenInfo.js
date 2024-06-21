@@ -10,6 +10,8 @@ import {
   Alert,
   TextInput,
   LogBox,
+  ActivityIndicator,
+  Modal,
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
@@ -95,6 +97,7 @@ const BLOCK_CONFIGS = {
 function JobsComponent({ requestNumber }) {
   const { apiUrl } = useContext(ApiUrlContext);
   const navigation = useNavigation();
+
   const [blockStates, setBlockStates] = useState(
     Object.keys(BLOCK_CONFIGS).reduce((acc, blockName) => {
       acc[blockName] = {
@@ -108,6 +111,22 @@ function JobsComponent({ requestNumber }) {
   );
 
   const [openBlock, setOpenBlock] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const ModalView = () => (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={isLoading}
+      onRequestClose={() => setIsLoading(false)}
+    >
+      <View style={styles.modalBackground}>
+        <View style={styles.activityIndicatorWrapper}>
+          <ActivityIndicator size="large" color="#0000ff" />
+          <Text>Загрузка фотоотчета...</Text>
+        </View>
+      </View>
+    </Modal>
+  );
 
   const pickImage = async (blockName, sectionName) => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -168,6 +187,7 @@ function JobsComponent({ requestNumber }) {
           onPress: async () => {
             if (!openBlock || !blockStates[openBlock]) {
               Alert.alert("Ошибка", "Выберите блок для закрытия заявки.");
+
               return;
             }
 
@@ -200,7 +220,7 @@ function JobsComponent({ requestNumber }) {
               Alert.alert("Ошибка", errorMessage.trim());
               return;
             }
-
+            setIsLoading(true); // Показать модальное окно загрузки
             try {
               await uploadAllImages(
                 requestNumber,
@@ -209,7 +229,7 @@ function JobsComponent({ requestNumber }) {
                 currentBlockConfig.title
               );
 
-              // Вернуть пользователя на список заявок
+              // Вернуть пользователя на страницу заявки
               navigation.navigate("Заявки");
             } catch (error) {
               console.error("Ошибка при закрытии заявки", error);
@@ -217,6 +237,8 @@ function JobsComponent({ requestNumber }) {
                 "Ошибка",
                 `Произошла ошибка при закрытии заявки: ${error.message}`
               );
+            } finally {
+              setIsLoading(false); // Скрыть модальное окно загрузки
             }
           },
         },
@@ -347,6 +369,7 @@ function JobsComponent({ requestNumber }) {
 
   return (
     <ScrollView style={styles.main}>
+      <ModalView />
       {Object.entries(BLOCK_CONFIGS).map(([blockName, config]) => (
         <Block
           key={blockName}
@@ -686,5 +709,18 @@ const styles = StyleSheet.create({
   },
   scanIcon: {
     padding: 5,
+  },
+  modalBackground: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  activityIndicatorWrapper: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 10,
+    padding: 20,
+    display: "flex",
+    alignItems: "center",
   },
 });
