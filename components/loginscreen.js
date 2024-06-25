@@ -13,6 +13,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ApiUrlContext } from "./contexts/ApiUrlContext";
 import { UserContext } from "./contexts/UserContext";
+import NetInfo from "@react-native-community/netinfo";
 
 const LoginScreen = ({ navigation }) => {
   const { apiUrl } = useContext(ApiUrlContext);
@@ -35,24 +36,35 @@ const LoginScreen = ({ navigation }) => {
 
   const checkLoggedIn = async () => {
     try {
+      const state = await NetInfo.fetch();
       const token = await AsyncStorage.getItem("token");
       const user = await AsyncStorage.getItem("user");
       if (token && user) {
         const parsedUser = JSON.parse(user);
-        const isActive = await checkUserStatus(parsedUser.id);
-        if (isActive) {
+        if (state.isConnected) {
+          const isActive = await checkUserStatus(parsedUser.id);
+          if (isActive) {
+            setUser(parsedUser);
+            setLoggedIn(true);
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "Main" }],
+            });
+          } else {
+            await logoutUser();
+            Alert.alert(
+              "Ошибка",
+              "Пользователь не активен. Пожалуйста, свяжитесь с менеджером."
+            );
+          }
+        } else {
+          // Если нет интернета, используем сохраненные данные
           setUser(parsedUser);
           setLoggedIn(true);
           navigation.reset({
             index: 0,
             routes: [{ name: "Main" }],
           });
-        } else {
-          await logoutUser();
-          Alert.alert(
-            "Ошибка",
-            "Пользователь не активен. Пожалуйста, свяжитесь с менеджером."
-          );
         }
       }
     } catch (error) {

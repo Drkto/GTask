@@ -8,15 +8,16 @@ import Info from "./components/Info";
 import BarcodeScannerScreen from "./components/BarcodeScannerScreen";
 import NewsList from "./components/NewsList";
 import KnowledgeBase from "./components/KnowledgeBase";
+import ChangePassword from "./components/ChangePassword";
+import SVGapplay from "./components/SVGapply";
+
 import { AntDesign } from "@expo/vector-icons";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
-import { StatusBar, TouchableOpacity, View, TextInput } from "react-native";
+import { StatusBar } from "react-native";
 import { ApiUrlProvider } from "./components/contexts/ApiUrlContext";
 import { UserProvider } from "./components/contexts/UserContext";
-import ChangePassword from "./components/ChangePassword";
-import SVGapplay from "./components/SVGapply";
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
