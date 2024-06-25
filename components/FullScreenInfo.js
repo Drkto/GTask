@@ -20,6 +20,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 import { ApiUrlContext } from "./contexts/ApiUrlContext";
 import Icon from "react-native-vector-icons/AntDesign";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 //игнорируем ошибку
 LogBox.ignoreLogs([
   "Non-serializable values were found in the navigation state",
@@ -433,6 +434,17 @@ const Block = ({
     setBlockState({ ...blockState, comments: text });
   };
 
+  const deleteSerialNumber = (index) => {
+    const updatedAdditionalSerialNumbers = [
+      ...blockState.additionalSerialNumbers,
+    ];
+    updatedAdditionalSerialNumbers.splice(index, 1); // Remove 1 element at 'index'
+    setBlockState({
+      ...blockState,
+      additionalSerialNumbers: updatedAdditionalSerialNumbers,
+    });
+  };
+
   return (
     <View style={styles.textContainer}>
       <TouchableOpacity onPress={() => toggleBlock(blockName)}>
@@ -508,6 +520,12 @@ const Block = ({
                           });
                         }}
                       />
+                      <TouchableOpacity
+                        onPress={() => deleteSerialNumber(index)}
+                        style={styles.scanIcon}
+                      >
+                        <Icon name="closecircle" size={20} color="#FF0000" />
+                      </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() =>
                           navigation.navigate("Scanner", {
