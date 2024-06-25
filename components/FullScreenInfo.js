@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -106,10 +106,65 @@ function JobsComponent({ requestNumber }) {
         serialNumbers: "",
         additionalSerialNumbers: [],
         comments: "", // добавлено для хранения комментариев
+        selectedType: "",
+        isOpen: false, // добавляем isOpen для отслеживания состояния блока
       };
       return acc;
     }, {})
   );
+  // Функция для сброса состояний blockStates
+  const resetBlockStates = () => {
+    setBlockStates(
+      Object.keys(BLOCK_CONFIGS).reduce((acc, blockName) => {
+        acc[blockName] = {
+          images: {},
+          serialNumbers: "",
+          additionalSerialNumbers: [],
+          comments: "",
+          selectedType: "",
+          isOpen: false,
+        };
+        return acc;
+      }, {})
+    );
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const savedBlockStates = await AsyncStorage.getItem("blockStates");
+        if (savedBlockStates) {
+          const parsedBlockStates = JSON.parse(savedBlockStates);
+
+          // Устанавливаем blockStates из сохранённых данных
+          setBlockStates(parsedBlockStates);
+
+          // Находим открытый блок и устанавливаем openBlock
+          Object.keys(parsedBlockStates).forEach((blockName) => {
+            if (parsedBlockStates[blockName].isOpen) {
+              setOpenBlock(blockName);
+            }
+          });
+        }
+      } catch (error) {
+        console.error("Ошибка загрузки данных из AsyncStorage:", error);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    const saveData = async () => {
+      try {
+        await AsyncStorage.setItem("blockStates", JSON.stringify(blockStates));
+      } catch (error) {
+        console.error("Ошибка сохранения данных в AsyncStorage:", error);
+      }
+    };
+
+    saveData();
+  }, [blockStates]);
 
   const [openBlock, setOpenBlock] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -229,7 +284,8 @@ function JobsComponent({ requestNumber }) {
                 openBlock,
                 currentBlockConfig.title
               );
-
+              // После закрытия заявки вызываем resetBlockStates
+              resetBlockStates();
               // Вернуть пользователя на страницу заявки
               navigation.navigate("Заявки");
             } catch (error) {
@@ -365,7 +421,21 @@ function JobsComponent({ requestNumber }) {
   };
 
   const toggleBlock = (blockName) => {
-    setOpenBlock(openBlock === blockName ? null : blockName);
+    setOpenBlock(blockName);
+
+    setBlockStates((prevBlockStates) => {
+      const updatedBlockStates = { ...prevBlockStates };
+
+      // Сброс isOpen для всех блоков, кроме выбранного
+      Object.keys(updatedBlockStates).forEach((name) => {
+        updatedBlockStates[name] = {
+          ...updatedBlockStates[name],
+          isOpen: name === blockName ? !updatedBlockStates[name].isOpen : false,
+        };
+      });
+
+      return updatedBlockStates;
+    });
   };
 
   return (
