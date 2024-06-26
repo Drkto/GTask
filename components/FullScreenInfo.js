@@ -21,6 +21,7 @@ import { ApiUrlContext } from "./contexts/ApiUrlContext";
 import Icon from "react-native-vector-icons/AntDesign";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
 //игнорируем ошибку
 LogBox.ignoreLogs([
   "Non-serializable values were found in the navigation state",

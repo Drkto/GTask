@@ -10,12 +10,12 @@ import NewsList from "./components/NewsList";
 import KnowledgeBase from "./components/KnowledgeBase";
 import ChangePassword from "./components/ChangePassword";
 import SVGapplay from "./components/SVGapply";
-
+import * as Clipboard from 'expo-clipboard';
 import { AntDesign } from "@expo/vector-icons";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { NavigationContainer } from "@react-navigation/native";
-import { StatusBar } from "react-native";
+import { StatusBar, TouchableOpacity } from "react-native";
 import { ApiUrlProvider } from "./components/contexts/ApiUrlContext";
 import { UserProvider } from "./components/contexts/UserContext";
 
@@ -90,6 +90,17 @@ export default function navigate() {
               component={FullScreenInfo}
               options={({ route }) => ({
                 title: "Заявка № " + route.params?.itemData.Number,
+                headerRight: () => (
+                  <TouchableOpacity
+                    onPress={() => {
+                      Clipboard.setStringAsync(route.params?.itemData.Number);
+                    }}
+                    style={{ marginRight: 15 }}
+                  >
+                    <AntDesign name="copy1" size={24} color="black" />
+                  </TouchableOpacity>
+                ),
+
               })}
             />
             <Stack.Screen name="Scanner" component={BarcodeScannerScreen} />

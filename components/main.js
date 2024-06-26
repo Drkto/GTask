@@ -224,6 +224,7 @@ export default function Main({ navigation }) {
       ),
     });
   }, [navigation, searchVisible, searchText]);
+  
   useEffect(() => {
     const initializeData = async () => {
       const localData = await loadDataFromLocalStorage();

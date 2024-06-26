@@ -23,7 +23,7 @@ function Stock({ data, isConnected, refreshing, onRefresh }) {
   const handleCopyToClipboard = (equipment) => {
     const { Name, SN } = equipment;
     const textToCopy = `Оборудование: ${Name}, Серийный номер: ${SN}`;
-    Clipboard.setString(textToCopy);
+    Clipboard.setStringAsync(textToCopy);
   };
 
   return (
