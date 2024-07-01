@@ -61,9 +61,7 @@ function ActiveWork({
   return (
     <SafeAreaView style={styles.main}>
       {networkError && (
-        <Text style={styles.errorText}>
-          Отсутствует подключение к интернету.
-        </Text>
+        <Text style={styles.errorText}>Отсутствует подключение к серверу.</Text>
       )}
       <FlatList
         ListHeaderComponent={() => (
@@ -224,7 +222,7 @@ export default function Main({ navigation }) {
       ),
     });
   }, [navigation, searchVisible, searchText]);
-  
+
   useEffect(() => {
     const initializeData = async () => {
       const localData = await loadDataFromLocalStorage();

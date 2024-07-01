@@ -49,7 +49,11 @@ const BLOCK_CONFIGS = {
     description: "Описание процесса монтажа.",
     sections: [
       { name: "layout", label: "Место монтажа", icon: "download" },
-      { name: "terminal", label: "Терминал (внешний вид)", icon: "download" },
+      {
+        name: "terminal",
+        label: "Оборудование (внешний вид, SN)",
+        icon: "download",
+      },
       { name: "serialnumber", label: "Оборудование (серийный номер)" },
       { name: "payment", label: "Тестовые операции", icon: "download" },
       { name: "comment", label: "Описание работ" },
@@ -61,10 +65,14 @@ const BLOCK_CONFIGS = {
     description: "Описание процесса демонтажа.",
     sections: [
       // Добавьте соответствующие секции для демонтажа
-      { name: "terminal", label: "Терминал (внешний вид)", icon: "download" },
+      {
+        name: "terminal",
+        label: "Оборудование (внешний вид, SN)",
+        icon: "download",
+      },
       {
         name: "serialnumber",
-        label: "Терминал (серийный номер)",
+        label: "Оборудование (серийный номер)",
         icon: "download",
       },
       { name: "comment", label: "Описание работ" },
@@ -76,6 +84,12 @@ const BLOCK_CONFIGS = {
     description: "Описание процесса сервиса.",
     sections: [
       // Добавьте соответствующие секции для восстановления
+      {
+        name: "terminal",
+        label: "Оборудование (внешний вид, SN)",
+        icon: "download",
+      },
+
       {
         name: "serialnumber",
         label: "Оборудование (серийный номер)",
@@ -90,6 +104,7 @@ const BLOCK_CONFIGS = {
     description: "Описание процесса отказа",
     sections: [
       // Добавьте соответствующие секции для отказа/ложного
+
       { name: "comment", label: "Описание работ" },
       { name: "doc", label: "Акт выполненных работ", icon: "download" },
     ],
