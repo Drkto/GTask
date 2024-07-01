@@ -73,7 +73,6 @@ const BLOCK_CONFIGS = {
       {
         name: "serialnumber",
         label: "Оборудование (серийный номер)",
-        icon: "download",
       },
       { name: "comment", label: "Описание работ" },
       { name: "doc", label: "Акт выполненных работ", icon: "download" },
