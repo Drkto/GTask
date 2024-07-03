@@ -11,9 +11,9 @@ import {
 } from "react-native";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
 import { ApiUrlContext } from "./contexts/ApiUrlContext";
 import { UserContext } from "./contexts/UserContext";
-import NetInfo from "@react-native-community/netinfo";
 
 const LoginScreen = ({ navigation }) => {
   const { apiUrl } = useContext(ApiUrlContext);
@@ -21,6 +21,11 @@ const LoginScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Добавим состояние для отслеживания загрузки
+
+  useEffect(() => {
+    checkLoggedIn();
+  }, []);
 
   const handleChangeText = (text) => {
     let cleanedText = text.replace(/\s+/g, "");
@@ -30,15 +35,12 @@ const LoginScreen = ({ navigation }) => {
     setPhoneNumber(cleanedText);
   };
 
-  useEffect(() => {
-    checkLoggedIn();
-  }, []);
-
   const checkLoggedIn = async () => {
     try {
       const state = await NetInfo.fetch();
       const token = await AsyncStorage.getItem("token");
       const user = await AsyncStorage.getItem("user");
+
       if (token && user) {
         const parsedUser = JSON.parse(user);
         if (state.isConnected) {
@@ -46,10 +48,7 @@ const LoginScreen = ({ navigation }) => {
           if (isActive) {
             setUser(parsedUser);
             setLoggedIn(true);
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "Main" }],
-            });
+            navigation.reset({ index: 0, routes: [{ name: "Main" }] });
           } else {
             await logoutUser();
             Alert.alert(
@@ -58,17 +57,16 @@ const LoginScreen = ({ navigation }) => {
             );
           }
         } else {
-          // Если нет интернета, используем сохраненные данные
           setUser(parsedUser);
           setLoggedIn(true);
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Main" }],
-          });
+          navigation.reset({ index: 0, routes: [{ name: "Main" }] });
         }
       }
     } catch (error) {
       console.error("Error checking logged in status:", error);
+      // Если произошла ошибка при проверке статуса, то просто отображаем экран входа
+    } finally {
+      setIsLoading(false); // Устанавливаем isLoading в false, когда проверка завершена
     }
   };
 
@@ -80,26 +78,12 @@ const LoginScreen = ({ navigation }) => {
         await AsyncStorage.setItem("user", JSON.stringify(response.user));
         setUser(response.user);
         setLoggedIn(true);
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Main" }],
-        });
+        navigation.reset({ index: 0, routes: [{ name: "Main" }] });
       } else {
         throw new Error("Invalid response from server");
       }
     } catch (error) {
-      console.error("Error logging in:", error);
-      let errorMessage =
-        "Не удалось подключиться к серверу. Проверьте ваше интернет-соединение и повторите попытку.";
-      if (error.response) {
-        if (error.response.status === 403) {
-          errorMessage =
-            "Пользователь не активен. Пожалуйста, свяжитесь с менеджером.";
-        } else if (error.response.data && error.response.data.error) {
-          errorMessage = `Ошибка: ${error.response.data.error}`;
-        }
-      }
-      Alert.alert("Ошибка", errorMessage);
+      handleLoginError(error);
     }
   };
 
@@ -107,15 +91,8 @@ const LoginScreen = ({ navigation }) => {
     try {
       const response = await axios.post(
         `${apiUrl}/login`,
-        {
-          phoneNumber,
-          password,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
+        { phoneNumber, password },
+        { headers: { "Content-Type": "application/json" } }
       );
       const { token, user } = response.data;
       if (!token || !user) {
@@ -143,11 +120,30 @@ const LoginScreen = ({ navigation }) => {
     await AsyncStorage.removeItem("user");
     setUser(null);
     setLoggedIn(false);
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Login" }],
-    });
+    navigation.reset({ index: 0, routes: [{ name: "Login" }] });
   };
+
+  const handleLoginError = (error) => {
+    console.error("Error logging in:", error);
+    let errorMessage = "Не удалось подключиться к серверу.";
+    if (error.response) {
+      if (error.response.status === 403) {
+        errorMessage =
+          "Пользователь не активен. Пожалуйста, свяжитесь с менеджером.";
+      } else if (error.response.data && error.response.data.error) {
+        errorMessage = `Ошибка: ${error.response.data.error}`;
+      }
+    }
+    Alert.alert("Ошибка", errorMessage);
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.container}>
+        <Image source={require("../assets/logo.png")} style={styles.logo} />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -171,7 +167,6 @@ const LoginScreen = ({ navigation }) => {
           <Button title="Вход" onPress={handleLogin} />
         </>
       )}
-      {loggedIn && <Text>Вы уже авторизованы.</Text>}
       <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
     </View>
   );
