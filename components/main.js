@@ -177,10 +177,11 @@ function ArchiveWork({
   }, []);
 
   const handleRefresh = () => {
-    setHasMore(true);
-    setPage(0);
-    fetchArchiveData(true);
-    onRefresh();
+    setAllData([]); // Очистить список заявок
+    setHasMore(true); // Установить флаг наличия дополнительных данных
+    setPage(0); // Сбросить текущую страницу на 0
+    fetchArchiveData(true); // Загрузить данные заново
+    onRefresh(); // Вызвать колбэк обновления, если необходимо
   };
 
   return (
