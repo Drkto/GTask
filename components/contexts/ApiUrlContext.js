@@ -9,7 +9,7 @@ export const ApiUrlProvider = ({ children }) => {
     setApiUrl((prevUrl) =>
       prevUrl === "http://178.253.42.83:3000"
         ? "http://178.253.42.83:3000"
-        : "http://192.168.0.21:3000"
+        : "http://192.168.0.32:3000"
     );
   };
 

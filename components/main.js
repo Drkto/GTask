@@ -9,6 +9,7 @@ import {
   StatusBar,
   RefreshControl,
   TextInput,
+  ActivityIndicator
 } from "react-native";
 import moment from "moment";
 import "moment/locale/ru";
@@ -54,8 +55,10 @@ function ActiveWork({
     return moment(dateTime).format("lll");
   };
 
-  const filterDataByActive = () => {
-    return data.filter((item) => item.Status === 0);
+  const filterAndSortDataByActive = () => {
+    return data
+      .filter((item) => item.Status === 0)
+      .sort((a, b) => new Date(b.Date) - new Date(a.Date));
   };
 
   return (
@@ -67,7 +70,7 @@ function ActiveWork({
         ListHeaderComponent={() => (
           <Text style={styles.lastUpdatedText}>{formatLastUpdated()}</Text>
         )}
-        data={filterDataByActive()}
+        data={filterAndSortDataByActive()}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.text} onPress={() => LoadScene(item)}>
             <Text style={{ flexDirection: "row", marginRight: 10 }}>
@@ -90,13 +93,19 @@ function ActiveWork({
 
 // Компонент для архивных заявок
 function ArchiveWork({
-  data,
   navigation,
   onRefresh,
   refreshing,
   lastUpdated,
   networkError,
+  apiUrl,
+  user,
 }) {
+  const [page, setPage] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [allData, setAllData] = useState([]);
+  const [hasMore, setHasMore] = useState(true);
+
   const LoadScene = (item) => {
     navigation.navigate("О Заявке", { itemData: item });
   };
@@ -123,22 +132,69 @@ function ArchiveWork({
     return moment(dateTime).format("lll");
   };
 
-  const filterDataByArchive = () => {
-    return data.filter((item) => item.Status === 1);
+  const fetchArchiveData = async (isRefreshing = false) => {
+    if ((loadingMore && !isRefreshing) || !hasMore) return;
+    setLoadingMore(true);
+
+    try {
+      const response = await axios.get(`${apiUrl}/archive/${user.id}`, {
+        params: {
+          limit: 5,
+          offset: isRefreshing ? 0 : page * 5,
+        },
+      });
+
+      const newData = response.data;
+      if (newData.length < 5) {
+        setHasMore(false);
+      }
+
+      if (isRefreshing) {
+        setAllData(newData);
+        setPage(1);
+      } else {
+        setAllData((prevData) => [...prevData, ...newData]);
+        setPage((prevPage) => prevPage + 1);
+      }
+    } catch (error) {
+      console.error("Ошибка при загрузке данных", error);
+    }
+
+    setLoadingMore(false);
+  };
+
+  useEffect(() => {
+    fetchArchiveData(true);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      setAllData([]);
+      setPage(0);
+      setHasMore(true);
+      setLoadingMore(false);
+    };
+  }, []);
+
+  const handleRefresh = () => {
+    setHasMore(true);
+    setPage(0);
+    fetchArchiveData(true);
+    onRefresh();
   };
 
   return (
     <SafeAreaView style={styles.main}>
       {networkError && (
         <Text style={styles.errorText}>
-          Отсутствует подключение к интернету.
+          Отсутствует подключение к серверу.
         </Text>
       )}
       <FlatList
         ListHeaderComponent={() => (
           <Text style={styles.lastUpdatedText}>{formatLastUpdated()}</Text>
         )}
-        data={filterDataByArchive()}
+        data={allData}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.text} onPress={() => LoadScene(item)}>
             <Text style={{ flexDirection: "row" }}>
@@ -146,14 +202,24 @@ function ArchiveWork({
               <Text style={styles.activeBox}>{item.Service || "N/A"}</Text>
             </Text>
             <Text>
-              Дата создания: {item.Date ? formatDateTime(item.Date) : "N/A"}
+              Дата закрытия: {item.DateEnd ? formatDateTime(item.DateEnd) : "N/A"}
             </Text>
             <Text numberOfLines={2}>Адрес: {item.Address || "N/A"}</Text>
           </TouchableOpacity>
         )}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+          />
         }
+        onEndReached={() => {
+          if (hasMore && !loadingMore) {
+            fetchArchiveData(false);
+          }
+        }}
+        onEndReachedThreshold={0.1}
+        ListFooterComponent={() => loadingMore && <ActivityIndicator size="large" />}
       />
     </SafeAreaView>
   );
@@ -246,7 +312,7 @@ export default function Main({ navigation }) {
   const fetchData = async (idEngineer) => {
     setRefreshing(true);
     try {
-      const response = await axios.get(`${apiUrl}/data/${idEngineer}`);
+      const response = await axios.get(`${apiUrl}/active/${idEngineer}`);
       const fetchedData = response.data;
       setData(fetchedData);
       setLastUpdated(new Date());
@@ -361,6 +427,8 @@ export default function Main({ navigation }) {
           refreshing={refreshing}
           lastUpdated={lastUpdated}
           networkError={networkError}
+          apiUrl={apiUrl}
+          user={user}
         />
       )}
       <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
@@ -432,5 +500,13 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     marginRight: 10,
     color: "gray",
+  },
+  errorText: {
+    textAlign: "center", // Центрирует текст по горизонтали
+    justifyContent: "center", // Центрирует текст по вертикали
+    alignSelf: "center", // Центрирует элемент по горизонтали
+    color: "red", // Цвет текста
+    padding: 10, // Внутренний отступ
+    fontSize: 16, // Размер шрифта
   },
 });
