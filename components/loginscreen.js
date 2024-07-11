@@ -44,17 +44,28 @@ const LoginScreen = ({ navigation }) => {
       if (token && user) {
         const parsedUser = JSON.parse(user);
         if (state.isConnected) {
-          const isActive = await checkUserStatus(parsedUser.id);
-          if (isActive) {
+          // Добавляем флаг, чтобы проверка выполнялась только один раз
+          const hasCheckedStatus = await AsyncStorage.getItem(
+            "hasCheckedStatus"
+          );
+          if (!hasCheckedStatus) {
+            const isActive = await checkUserStatus(parsedUser.id);
+            if (isActive) {
+              await AsyncStorage.setItem("hasCheckedStatus", "true");
+              setUser(parsedUser);
+              setLoggedIn(true);
+              navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+            } else {
+              await logoutUser();
+              Alert.alert(
+                "Ошибка",
+                "Пользователь не активен. Пожалуйста, свяжитесь с менеджером."
+              );
+            }
+          } else {
             setUser(parsedUser);
             setLoggedIn(true);
             navigation.reset({ index: 0, routes: [{ name: "Main" }] });
-          } else {
-            await logoutUser();
-            Alert.alert(
-              "Ошибка",
-              "Пользователь не активен. Пожалуйста, свяжитесь с менеджером."
-            );
           }
         } else {
           setUser(parsedUser);
@@ -118,6 +129,7 @@ const LoginScreen = ({ navigation }) => {
   const logoutUser = async () => {
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("user");
+    await AsyncStorage.removeItem("hasCheckedStatus"); // Удаляем флаг проверки статуса при выходе
     setUser(null);
     setLoggedIn(false);
     navigation.reset({ index: 0, routes: [{ name: "Login" }] });
