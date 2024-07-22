@@ -4,9 +4,8 @@ import {
   TextInput,
   Button,
   StyleSheet,
-  Image,
-  Text,
-  Alert,
+ Image,
+ Alert,
   StatusBar,
 } from "react-native";
 import axios from "axios";
@@ -21,7 +20,7 @@ const LoginScreen = ({ navigation }) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Добавим состояние для отслеживания загрузки
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     checkLoggedIn();
@@ -44,10 +43,7 @@ const LoginScreen = ({ navigation }) => {
       if (token && user) {
         const parsedUser = JSON.parse(user);
         if (state.isConnected) {
-          // Добавляем флаг, чтобы проверка выполнялась только один раз
-          const hasCheckedStatus = await AsyncStorage.getItem(
-            "hasCheckedStatus"
-          );
+          const hasCheckedStatus = await AsyncStorage.getItem("hasCheckedStatus");
           if (!hasCheckedStatus) {
             const isActive = await checkUserStatus(parsedUser.id);
             if (isActive) {
@@ -57,10 +53,7 @@ const LoginScreen = ({ navigation }) => {
               navigation.reset({ index: 0, routes: [{ name: "Main" }] });
             } else {
               await logoutUser();
-              Alert.alert(
-                "Ошибка",
-                "Пользователь не активен. Пожалуйста, свяжитесь с менеджером."
-              );
+              Alert.alert("Ошибка", "Пользователь не активен. Пожалуйста, свяжитесь с менеджером.");
             }
           } else {
             setUser(parsedUser);
@@ -75,14 +68,18 @@ const LoginScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error("Error checking logged in status:", error);
-      // Если произошла ошибка при проверке статуса, то просто отображаем экран входа
     } finally {
-      setIsLoading(false); // Устанавливаем isLoading в false, когда проверка завершена
+      setIsLoading(false);
     }
   };
 
   const handleLogin = async () => {
     try {
+      const state = await NetInfo.fetch();
+      if (!state.isConnected) {
+        Alert.alert("Ошибка", "Отсутствует подключение к интернету. Пожалуйста, проверьте ваше соединение.");
+        return;
+      }
       const response = await loginUser(phoneNumber, password);
       if (response.token && response.user) {
         await AsyncStorage.setItem("token", response.token);
@@ -103,7 +100,7 @@ const LoginScreen = ({ navigation }) => {
       const response = await axios.post(
         `${apiUrl}/login`,
         { phoneNumber, password },
-        { headers: { "Content-Type": "application/json" } }
+        { headers: { "Content-Type": "application/json" }, timeout: 5000 } // Таймаут в 5 секунд
       );
       const { token, user } = response.data;
       if (!token || !user) {
@@ -118,7 +115,7 @@ const LoginScreen = ({ navigation }) => {
 
   const checkUserStatus = async (userId) => {
     try {
-      const response = await axios.get(`${apiUrl}/user/status/${userId}`);
+      const response = await axios.get(`${apiUrl}/user/status/${userId}`, { timeout: 5000 }); // Таймаут в 5 секунд
       return response.data.status === 1;
     } catch (error) {
       console.error("Error checking user status:", error);
@@ -129,7 +126,7 @@ const LoginScreen = ({ navigation }) => {
   const logoutUser = async () => {
     await AsyncStorage.removeItem("token");
     await AsyncStorage.removeItem("user");
-    await AsyncStorage.removeItem("hasCheckedStatus"); // Удаляем флаг проверки статуса при выходе
+    await AsyncStorage.removeItem("hasCheckedStatus");
     setUser(null);
     setLoggedIn(false);
     navigation.reset({ index: 0, routes: [{ name: "Login" }] });
@@ -140,8 +137,7 @@ const LoginScreen = ({ navigation }) => {
     let errorMessage = "Не удалось подключиться к серверу.";
     if (error.response) {
       if (error.response.status === 403) {
-        errorMessage =
-          "Пользователь не активен. Пожалуйста, свяжитесь с менеджером.";
+        errorMessage = "Пользователь не активен. Пожалуйста, свяжитесь с менеджером.";
       } else if (error.response.data && error.response.data.error) {
         errorMessage = `Ошибка: ${error.response.data.error}`;
       }
