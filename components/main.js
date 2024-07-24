@@ -9,7 +9,7 @@ import {
   StatusBar,
   RefreshControl,
   TextInput,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
 import moment from "moment";
 import "moment/locale/ru";
@@ -187,9 +187,7 @@ function ArchiveWork({
   return (
     <SafeAreaView style={styles.main}>
       {networkError && (
-        <Text style={styles.errorText}>
-          Отсутствует подключение к серверу.
-        </Text>
+        <Text style={styles.errorText}>Отсутствует подключение к серверу.</Text>
       )}
       <FlatList
         ListHeaderComponent={() => (
@@ -203,16 +201,14 @@ function ArchiveWork({
               <Text style={styles.activeBox}>{item.Service || "N/A"}</Text>
             </Text>
             <Text>
-              Дата закрытия: {item.DateEnd ? formatDateTime(item.DateEnd) : "N/A"}
+              Дата закрытия:{" "}
+              {item.DateEnd ? formatDateTime(item.DateEnd) : "N/A"}
             </Text>
             <Text numberOfLines={2}>Адрес: {item.Address || "N/A"}</Text>
           </TouchableOpacity>
         )}
         refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-          />
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
         onEndReached={() => {
           if (hasMore && !loadingMore) {
@@ -220,7 +216,9 @@ function ArchiveWork({
           }
         }}
         onEndReachedThreshold={0.1}
-        ListFooterComponent={() => loadingMore && <ActivityIndicator size="large" />}
+        ListFooterComponent={() =>
+          loadingMore && <ActivityIndicator size="large" />
+        }
       />
     </SafeAreaView>
   );
