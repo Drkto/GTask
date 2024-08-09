@@ -110,7 +110,7 @@ const BLOCK_CONFIGS = {
   },
 };
 //исполнение заявок
-function JobsComponent({ requestNumber }) {
+function JobsComponent({ requestNumber, idRequest }) {
   const { apiUrl } = useContext(ApiUrlContext);
   const navigation = useNavigation();
 
@@ -294,6 +294,7 @@ function JobsComponent({ requestNumber }) {
             setIsLoading(true); // Показать модальное окно загрузки
             try {
               await uploadAllImages(
+                idRequest,
                 requestNumber,
                 blockState.comments,
                 openBlock,
@@ -390,6 +391,7 @@ function JobsComponent({ requestNumber }) {
           "Content-Type": "multipart/form-data",
         },
         params: {
+          idRequest: idRequest,
           requestNumber: requestNumber,
           description: description,
           serialNumbers: serialNumbersString,
@@ -705,9 +707,9 @@ export default function FullScreenInfo() {
           </View>
         </View>
       </View>
-      {currentScreen === "attributes" && <AttributesComponent />}
+      {currentScreen === "attributes" && <AttributesComponent requestId={itemData.idRequest} />}
       {currentScreen === "jobs" && !isArchive && (
-        <JobsComponent requestNumber={itemData.Number} />
+        <JobsComponent requestNumber={itemData.Number} requestId={itemData.idRequest}/>
       )}
     </View>
   );
