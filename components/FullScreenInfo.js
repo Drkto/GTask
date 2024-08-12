@@ -321,6 +321,7 @@ function JobsComponent({ requestNumber, idRequest }) {
   };
 
   const uploadAllImages = async (
+    idRequest,
     requestNumber,
     description,
     openBlock,
@@ -382,10 +383,8 @@ function JobsComponent({ requestNumber, idRequest }) {
           }
         }
       }
-
       const serialNumbersString = serialNumbers.join(",");
-      console.log(serialNumbers);
-
+      console.log(idRequest);
       const response = await axios.post(`${apiUrl}/upload`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -707,9 +706,14 @@ export default function FullScreenInfo() {
           </View>
         </View>
       </View>
-      {currentScreen === "attributes" && <AttributesComponent requestId={itemData.idRequest} />}
+      {currentScreen === "attributes" && (
+        <AttributesComponent requestId={itemData.idRequest} />
+      )}
       {currentScreen === "jobs" && !isArchive && (
-        <JobsComponent requestNumber={itemData.Number} requestId={itemData.idRequest}/>
+        <JobsComponent
+          requestNumber={itemData.Number}
+          idRequest={itemData.idRequest}
+        />
       )}
     </View>
   );
