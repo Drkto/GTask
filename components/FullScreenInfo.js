@@ -21,6 +21,7 @@ import { ApiUrlContext } from "./contexts/ApiUrlContext";
 import Icon from "react-native-vector-icons/AntDesign";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as FileSystem from "expo-file-system";
 
 //игнорируем ошибку
 LogBox.ignoreLogs([
@@ -113,6 +114,25 @@ const BLOCK_CONFIGS = {
 function JobsComponent({ requestNumber, idRequest }) {
   const { apiUrl } = useContext(ApiUrlContext);
   const navigation = useNavigation();
+
+  const clearImageCache = async (imageUris) => {
+    try {
+      await Promise.all(
+        imageUris.map((uri) =>
+          FileSystem.deleteAsync(uri, { idempotent: true })
+        )
+      );
+    } catch (error) {
+      console.error("Ошибка очистки кэша изображений", error);
+    }
+  };
+  const deleteFileFromCache = async (uri) => {
+    try {
+      await FileSystem.deleteAsync(uri, { idempotent: true });
+    } catch (error) {
+      console.error("Ошибка при удалении файла из кэша:", error);
+    }
+  };
 
   const [blockStates, setBlockStates] = useState(
     Object.keys(BLOCK_CONFIGS).reduce((acc, blockName) => {
@@ -226,21 +246,29 @@ function JobsComponent({ requestNumber, idRequest }) {
     }
   };
 
-  const deleteImage = (blockName, sectionName, imageIndex) => {
-    setBlockStates((prevStates) => {
-      const newImages = [...prevStates[blockName].images[sectionName]];
-      newImages.splice(imageIndex, 1);
-      return {
-        ...prevStates,
-        [blockName]: {
-          ...prevStates[blockName],
-          images: {
-            ...prevStates[blockName].images,
-            [sectionName]: newImages,
+  const deleteImage = async (blockName, sectionName, imageIndex, imageUri) => {
+    try {
+      // Удалите изображение из кэша
+      await deleteFileFromCache(imageUri);
+
+      // Удалите изображение из состояния
+      setBlockStates((prevStates) => {
+        const newImages = [...prevStates[blockName].images[sectionName]];
+        newImages.splice(imageIndex, 1);
+        return {
+          ...prevStates,
+          [blockName]: {
+            ...prevStates[blockName],
+            images: {
+              ...prevStates[blockName].images,
+              [sectionName]: newImages,
+            },
           },
-        },
-      };
-    });
+        };
+      });
+    } catch (error) {
+      console.error("Ошибка при удалении изображения:", error);
+    }
   };
 
   const handleCloseRequest = async () => {
@@ -258,7 +286,6 @@ function JobsComponent({ requestNumber, idRequest }) {
           onPress: async () => {
             if (!openBlock || !blockStates[openBlock]) {
               Alert.alert("Ошибка", "Выберите блок для закрытия заявки.");
-
               return;
             }
 
@@ -300,8 +327,16 @@ function JobsComponent({ requestNumber, idRequest }) {
                 openBlock,
                 currentBlockConfig.title
               );
+
+              // Очистка кэша изображений
+              const allImageUris = Object.values(blockStates)
+                .flatMap((block) => Object.values(block.images).flat())
+                .filter((uri) => uri);
+              await clearImageCache(allImageUris);
+
               // После закрытия заявки вызываем resetBlockStates
               resetBlockStates();
+
               // Вернуть пользователя на страницу заявки
               navigation.navigate("Заявки");
             } catch (error) {
@@ -429,7 +464,13 @@ function JobsComponent({ requestNumber, idRequest }) {
         [{ resize: { width: 800 } }],
         compressionOptions
       );
-      return manipulatedImage.uri;
+
+      // Проверка на null, если изображение не удалось обработать
+      if (manipulatedImage.uri) {
+        return manipulatedImage.uri;
+      } else {
+        throw new Error("Не удалось сжать изображение");
+      }
     } catch (error) {
       console.error("Failed to compress image", error);
       return null;
@@ -654,7 +695,7 @@ const Block = ({
                       <TouchableOpacity
                         style={styles.deleteIcon}
                         onPress={() =>
-                          deleteImage(blockName, section.name, index)
+                          deleteImage(blockName, section.name, index, uri)
                         }
                       >
                         <Icon name="closecircle" size={20} color="#FF0000" />
