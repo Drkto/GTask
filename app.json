@@ -3,7 +3,7 @@
     "name": "GTask",
     "slug": "GTask",
     "icon": "./assets/icon.png",
-    "version": "1.0.2",
+    "version": "1.0.3",
       "splash": {
         "image": "./assets/splash.png",
         "backgroundColor": "#ffffff"
