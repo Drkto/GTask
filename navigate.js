@@ -10,7 +10,7 @@ import NewsList from "./components/NewsList";
 import KnowledgeBase from "./components/KnowledgeBase";
 import ChangePassword from "./components/ChangePassword";
 import SVGapplay from "./components/SVGapply";
-import * as Clipboard from 'expo-clipboard';
+import * as Clipboard from "expo-clipboard";
 import { AntDesign } from "@expo/vector-icons";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -31,7 +31,8 @@ function TabNavigator() {
         name="Заявки"
         component={Main}
         initialParams={{ searchVisible, searchText }}
-        options={() => ({
+        options={({ route }) => ({
+          title: `Заявки ${route.params?.totalRequests || 0}`, // Вывод количества заявок
           tabBarIcon: ({ color, size }) => (
             <AntDesign name="profile" size={size} color={color} />
           ),
@@ -100,7 +101,6 @@ export default function navigate() {
                     <AntDesign name="copy1" size={24} color="black" />
                   </TouchableOpacity>
                 ),
-
               })}
             />
             <Stack.Screen name="Scanner" component={BarcodeScannerScreen} />

@@ -235,6 +235,7 @@ export default function Main({ navigation }) {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [timer, setTimer] = useState(null);
   const [networkError, setNetworkError] = useState(false);
+  const [totalRequests, setTotalRequests] = useState(0);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", () => {
@@ -269,7 +270,10 @@ export default function Main({ navigation }) {
                 value={searchText} // Устанавливаем значение текста поиска
               />
               <TouchableOpacity
-                onPress={() => setSearchVisible(false)}
+                onPress={() => {
+                  setSearchVisible(false);
+                  setSearchText(""); // Очищаем строку поиска при нажатии на крестик
+                }}
                 style={{ marginRight: 15, justifyContent: "center" }}
               >
                 <AntDesign name="closecircle" size={20} color="black" />
@@ -317,6 +321,9 @@ export default function Main({ navigation }) {
       setLastUpdated(new Date());
       await saveDataToLocalStorage(fetchedData);
       setNetworkError(false);
+
+      setTotalRequests(fetchedData.length); // Установка количества заявок
+      navigation.setParams({ totalRequests: fetchedData.length }); // Передача в навигацию
     } catch (error) {
       console.error("Ошибка при загрузке данных", error);
       if (error.message === "Network Error") {
@@ -327,6 +334,8 @@ export default function Main({ navigation }) {
       } else {
         const localData = await loadDataFromLocalStorage();
         setData(localData);
+        setTotalRequests(localData.length); // Установка количества заявок
+        navigation.setParams({ totalRequests: localData.length }); // Передача в навигацию
       }
     }
     setRefreshing(false);
