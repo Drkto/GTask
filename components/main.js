@@ -100,6 +100,7 @@ function ArchiveWork({
   networkError,
   apiUrl,
   user,
+  searchText,
 }) {
   const [page, setPage] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -110,6 +111,25 @@ function ArchiveWork({
     navigation.navigate("О Заявке", { itemData: item });
   };
 
+    // Фильтрация данных на основе текста поиска
+    const filterDataBySearch = () => {
+      if (!searchText) return allData;
+  
+      const lowerSearchText = searchText.toLowerCase();
+      return allData.filter((item) => {
+        return (
+          (item.Number && item.Number.toString().includes(lowerSearchText)) ||
+          (item.Service &&
+            item.Service.toLowerCase().includes(lowerSearchText)) ||
+          (item.Address &&
+            item.Address.toLowerCase().includes(lowerSearchText)) ||
+          (item.Description &&
+            item.Description.toLowerCase().includes(lowerSearchText))
+        );
+      });
+    };
+  
+    const filteredData = filterDataBySearch();
   const formatLastUpdated = () => {
     if (!lastUpdated) return "Никогда";
 
@@ -193,7 +213,7 @@ function ArchiveWork({
         ListHeaderComponent={() => (
           <Text style={styles.lastUpdatedText}>{formatLastUpdated()}</Text>
         )}
-        data={allData}
+        data={filteredData} // Используем отфильтрованные данные
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.text} onPress={() => LoadScene(item)}>
             <Text style={{ flexDirection: "row" }}>
@@ -208,7 +228,7 @@ function ArchiveWork({
           </TouchableOpacity>
         )}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         onEndReached={() => {
           if (hasMore && !loadingMore) {
@@ -437,6 +457,7 @@ export default function Main({ navigation }) {
           networkError={networkError}
           apiUrl={apiUrl}
           user={user}
+          searchText={searchText}
         />
       )}
       <StatusBar backgroundColor="#ffffff" barStyle="dark-content" />
