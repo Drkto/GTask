@@ -316,6 +316,10 @@ export default function Main({ navigation }) {
     const initializeData = async () => {
       const localData = await loadDataFromLocalStorage();
       setData(localData);
+      setTotalRequests(localData.length); // Устанавливаем количество заявок из локального хранилища
+      navigation.setParams({ totalRequests: localData.length }); // Передаём в навигацию
+
+      // Загрузка данных с сервера (если пользователь авторизован)
       if (user && user.id) {
         fetchData(user.id);
       }
@@ -337,26 +341,23 @@ export default function Main({ navigation }) {
     try {
       const response = await axios.get(`${apiUrl}/active/${idEngineer}`);
       const fetchedData = response.data;
-      setData(fetchedData);
-      setLastUpdated(new Date());
-      await saveDataToLocalStorage(fetchedData);
-      setNetworkError(false);
 
-      setTotalRequests(fetchedData.length); // Установка количества заявок
-      navigation.setParams({ totalRequests: fetchedData.length }); // Передача в навигацию
+      // Объединяем данные без дублирования
+      const updatedData = mergeData(data, fetchedData);
+
+      setData(updatedData);
+      setLastUpdated(new Date());
+      await saveDataToLocalStorage(updatedData);
+
+      setTotalRequests(updatedData.length);
+      navigation.setParams({ totalRequests: updatedData.length });
+      setNetworkError(false);
     } catch (error) {
       console.error("Ошибка при загрузке данных", error);
-      if (error.message === "Network Error") {
-        setNetworkError(true);
-        setTimeout(() => {
-          setNetworkError(false);
-        }, 5000);
-      } else {
-        const localData = await loadDataFromLocalStorage();
-        setData(localData);
-        setTotalRequests(localData.length); // Установка количества заявок
-        navigation.setParams({ totalRequests: localData.length }); // Передача в навигацию
-      }
+
+      // В случае ошибки используем только локальные данные
+      setNetworkError(true);
+      setTimeout(() => setNetworkError(false), 5000);
     }
     setRefreshing(false);
   };
@@ -395,6 +396,12 @@ export default function Main({ navigation }) {
       );
     }
   };
+    // Слияние данных без дублирования (по уникальному ID, например `id`)
+    const mergeData = (localData, fetchedData) => {
+      const existingIds = new Set(localData.map((item) => item.id));
+      const newData = fetchedData.filter((item) => !existingIds.has(item.id));
+      return [...localData, ...newData];
+    };
 
   const loadDataFromLocalStorage = async () => {
     try {
