@@ -148,58 +148,95 @@ function JobsComponent({ requestNumber, idRequest }) {
     }, {})
   );
   // Функция для сброса состояний blockStates
-  const resetBlockStates = () => {
-    setBlockStates(
-      Object.keys(BLOCK_CONFIGS).reduce((acc, blockName) => {
-        acc[blockName] = {
-          images: {},
-          serialNumbers: "",
-          additionalSerialNumbers: [],
-          comments: "",
-          selectedType: "",
-          isOpen: false,
-        };
-        return acc;
-      }, {})
-    );
+  const resetBlockStates = async () => {
+    try {
+      // Получаем сохранённые отчёты
+      const savedReports = await AsyncStorage.getItem("reports");
+      const parsedReports = savedReports ? JSON.parse(savedReports) : {};
+  
+      // Удаляем только данные для текущего idRequest
+      delete parsedReports[idRequest];
+  
+      // Сохраняем обновлённый список отчётов
+      await AsyncStorage.setItem("reports", JSON.stringify(parsedReports));
+  
+      // Сбрасываем локальное состояние
+      setBlockStates(
+        Object.keys(BLOCK_CONFIGS).reduce((acc, blockName) => {
+          acc[blockName] = {
+            images: {},
+            serialNumbers: "",
+            additionalSerialNumbers: [],
+            comments: "",
+            selectedType: "",
+            isOpen: false,
+          };
+          return acc;
+        }, {})
+      );
+    } catch (error) {
+      console.error("Ошибка сброса состояния:", error);
+    }
   };
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        const savedBlockStates = await AsyncStorage.getItem("blockStates");
-        if (savedBlockStates) {
-          const parsedBlockStates = JSON.parse(savedBlockStates);
-
-          // Устанавливаем blockStates из сохранённых данных
-          setBlockStates(parsedBlockStates);
-
-          // Находим открытый блок и устанавливаем openBlock
-          Object.keys(parsedBlockStates).forEach((blockName) => {
-            if (parsedBlockStates[blockName].isOpen) {
-              setOpenBlock(blockName);
-            }
+        const savedReports = await AsyncStorage.getItem("reports");
+        if (savedReports) {
+          const parsedReports = JSON.parse(savedReports);
+          const currentReport = parsedReports[idRequest] || {};
+  
+          setBlockStates({
+            ...Object.keys(BLOCK_CONFIGS).reduce((acc, blockName) => {
+              acc[blockName] = {
+                images: {},
+                serialNumbers: "",
+                additionalSerialNumbers: [],
+                comments: "",
+                selectedType: "",
+                isOpen: false,
+              };
+              return acc;
+            }, {}),
+            ...currentReport, // Загружаем данные для текущей заявки
           });
+  
+          // Открываем активный блок, если он сохранён
+          const openBlockName = Object.keys(currentReport).find(
+            (blockName) => currentReport[blockName]?.isOpen
+          );
+          setOpenBlock(openBlockName || null);
         }
       } catch (error) {
         console.error("Ошибка загрузки данных из AsyncStorage:", error);
       }
     };
-
+  
     loadData();
-  }, []);
+  }, [idRequest]); // При смене idRequest загружаем новые данные
 
   useEffect(() => {
     const saveData = async () => {
       try {
-        await AsyncStorage.setItem("blockStates", JSON.stringify(blockStates));
+        const savedReports = await AsyncStorage.getItem("reports");
+        const parsedReports = savedReports ? JSON.parse(savedReports) : {};
+  
+        // Обновляем только данные для текущего idRequest
+        const updatedReports = {
+          ...parsedReports,
+          [idRequest]: blockStates,
+        };
+  
+        await AsyncStorage.setItem("reports", JSON.stringify(updatedReports));
       } catch (error) {
         console.error("Ошибка сохранения данных в AsyncStorage:", error);
       }
     };
-
+  
     saveData();
-  }, [blockStates]);
+  }, [blockStates, idRequest]); // Сохраняем при изменении blockStates или idRequest
+  
 
   const [openBlock, setOpenBlock] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
