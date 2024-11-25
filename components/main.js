@@ -196,13 +196,6 @@ function ArchiveWork({
     };
   }, []);
 
-  const handleRefresh = () => {
-    setAllData([]); // Очистить список заявок
-    setHasMore(true); // Установить флаг наличия дополнительных данных
-    setPage(0); // Сбросить текущую страницу на 0
-    fetchArchiveData(true); // Загрузить данные заново
-    onRefresh(); // Вызвать колбэк обновления, если необходимо
-  };
 
   return (
     <SafeAreaView style={styles.main}>
@@ -398,8 +391,8 @@ export default function Main({ navigation }) {
   };
     // Слияние данных без дублирования (по уникальному ID, например `id`)
     const mergeData = (localData, fetchedData) => {
-      const existingIds = new Set(localData.map((item) => item.id));
-      const newData = fetchedData.filter((item) => !existingIds.has(item.id));
+      const existingIds = new Set(localData.map((item) => item.idRequest));
+      const newData = fetchedData.filter((item) => !existingIds.has(item.idRequest));
       return [...localData, ...newData];
     };
 
