@@ -533,6 +533,7 @@ function JobsComponent({ requestNumber, idRequest }) {
   };
 
   return (
+    <View style={styles.main}>
     <ScrollView style={styles.main}>
       <ModalView />
       {Object.entries(BLOCK_CONFIGS).map(([blockName, config]) => (
@@ -554,8 +555,12 @@ function JobsComponent({ requestNumber, idRequest }) {
           toggleBlock={toggleBlock}
         />
       ))}
-      <Button title="Закрыть заявку" onPress={handleCloseRequest} />
+      
     </ScrollView>
+      <TouchableOpacity style={styles.closeButton} onPress={handleCloseRequest}>
+        <Text style={styles.buttonText}>Закрыть заявку</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
@@ -801,12 +806,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  closeButton: {
+    
+    position: 'absolute',  // Абсолютное позиционирование кнопки
+    bottom: 10,            // Отступ от нижнего края экрана
+    right: 10,             // Отступ от правого края экрана
+    borderRadius: 30,      // Радиус для круглой формы
+    width: 70,             // Ширина кнопки
+    height: 70,            // Высота кнопки
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#007BFF',  // Цвет фона кнопки
+  },
+  buttonText: {
+    textAlign: 'center',
+    color: 'white',  // Цвет текста кнопки
+    fontWeight: 'bold',
+  },
   phoneNumber: {
     color: "#4287f5",
   },
   main: {
     backgroundColor: "#e3e3e3",
     flex: 1,
+    position: 'relative',
   },
   textContainer: {
     padding: 20,
